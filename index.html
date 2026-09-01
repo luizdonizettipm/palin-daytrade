@@ -203,6 +203,61 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
+/* DIÁRIO */
+.diary-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:1rem}
+.diary-cal-hd{font-family:var(--mono);font-size:.55rem;color:var(--tx3);text-align:center;padding:.3rem 0;letter-spacing:.08em;text-transform:uppercase}
+.diary-day{aspect-ratio:1;border-radius:6px;border:1px solid var(--b2);background:var(--s2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color .15s,background .15s;padding:4px;min-height:48px}
+.diary-day:hover{border-color:var(--acc);background:var(--s3)}
+.diary-day.today{border-color:var(--acc)!important}
+.diary-day.selected{border-color:var(--purp)!important;background:#1a0f2e!important}
+.diary-day.has-entry{border-color:var(--b2)}
+.diary-day.gain{background:#0a2218}
+.diary-day.stop{background:#2a0a10}
+.diary-day.empty-day{opacity:.25;cursor:default}
+.diary-day-num{font-family:var(--mono);font-size:.65rem;font-weight:700;color:var(--tx2);line-height:1}
+.diary-day-pnl{font-family:var(--mono);font-size:.5rem;line-height:1}
+.diary-day-mood{font-size:.65rem;line-height:1}
+.diary-editor{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:1.25rem}
+.diary-editor-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.diary-editor-date{font-family:var(--mono);font-size:.75rem;font-weight:700;color:var(--tx)}
+.diary-editor-pnl{font-family:var(--mono);font-size:.85rem;font-weight:700}
+.mood-row{display:flex;gap:.5rem;margin-bottom:1rem}
+.mood-btn{width:2.5rem;height:2.5rem;border-radius:50%;border:2px solid var(--b2);background:var(--s3);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s}
+.mood-btn:hover{border-color:var(--acc)}
+.mood-btn.selected{border-color:var(--purp);background:#1a0f2e}
+.tag-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem}
+.tag-btn{font-family:var(--mono);font-size:.6rem;padding:.25rem .65rem;border-radius:12px;border:1px solid var(--b2);background:var(--s3);color:var(--tx3);cursor:pointer;transition:all .15s}
+.tag-btn:hover{border-color:var(--acc);color:var(--tx)}
+.tag-btn.selected{border-color:var(--acc);background:#0d1a2e;color:var(--acc)}
+.diary-textarea{width:100%;min-height:120px;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.75rem;font-family:var(--mono);font-size:.75rem;color:var(--tx);resize:vertical;line-height:1.6;box-sizing:border-box}
+.diary-textarea:focus{outline:none;border-color:var(--acc)}
+/* PNL CALENDAR */
+.pnl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
+.pnl-nav{display:flex;align-items:center;gap:.75rem}
+.pnl-month-lbl{font-family:var(--mono);font-size:1rem;font-weight:700;min-width:120px;text-align:center}
+.pnl-nav-btn{width:2rem;height:2rem;border-radius:50%;border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s}
+.pnl-nav-btn:hover{border-color:var(--acc)}
+.pnl-stats{display:flex;gap:1.5rem;flex-wrap:wrap}
+.pnl-stat{text-align:center}
+.pnl-stat-lbl{font-family:var(--mono);font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.2rem}
+.pnl-stat-val{font-family:var(--mono);font-size:.9rem;font-weight:700}
+.pnl-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.pnl-dow{font-family:var(--mono);font-size:.55rem;color:var(--tx3);text-align:center;padding:.3rem 0;letter-spacing:.08em;text-transform:uppercase}
+.pnl-cell{border-radius:8px;border:1px solid transparent;padding:.5rem .4rem;min-height:70px;display:flex;flex-direction:column;cursor:pointer;transition:border-color .15s,filter .15s;position:relative}
+.pnl-cell:hover{filter:brightness(1.15);border-color:var(--acc)44}
+.pnl-cell.gain{background:#0d2e1a;border-color:#1a4a28}
+.pnl-cell.gain-hi{background:#0a3d1e;border-color:#1f5c30}
+.pnl-cell.stop{background:#2e0d12;border-color:#4a1a20}
+.pnl-cell.stop-hi{background:#3d0a10;border-color:#5c1a22}
+.pnl-cell.nodata{background:var(--s2);border-color:var(--b1);cursor:default;opacity:.45}
+.pnl-cell.nodata:hover{filter:none;border-color:var(--b1)}
+.pnl-cell.future{background:transparent;border-color:transparent;cursor:default}
+.pnl-cell.future:hover{filter:none}
+.pnl-cell.today-cell{border-color:var(--acc)!important}
+.pnl-cell-num{font-family:var(--mono);font-size:.58rem;color:var(--tx3);margin-bottom:auto}
+.pnl-cell-val{font-family:var(--mono);font-size:.78rem;font-weight:700;margin-top:auto}
+.pnl-cell-ops{font-family:var(--mono);font-size:.5rem;color:var(--tx3);margin-top:.15rem}
+.pnl-streak{font-family:var(--mono);font-size:.65rem;color:var(--tx3);margin-top:.75rem;display:flex;gap:1.5rem;flex-wrap:wrap}
 /* METAS */
 .meta-section{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);margin-bottom:1.25rem;overflow:hidden}
 .meta-section-hd{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;cursor:pointer;user-select:none;border-bottom:1px solid var(--b1)}
@@ -363,6 +418,8 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-sec">Mesa Proprietária</div>
   <div class="sb-item"    id="n-mesa"      onclick="nav('mesa')"><span class="sb-icon">👥</span>Mesa</div>
   <div class="sb-item"    id="n-metas"     onclick="nav('metas')"><span class="sb-icon">🎯</span>Metas</div>
+  <div class="sb-item"    id="n-diario"    onclick="nav('diario')"><span class="sb-icon">📓</span>Diário</div>
+  <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
   <div class="sb-item"    id="n-ranking"   onclick="nav('ranking')"><span class="sb-icon">🏆</span>Ranking</div>
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
@@ -604,6 +661,99 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <div class="sec-head"><div class="sec-title tdot">Resultado Diário por Trader</div><button class="btn btn-g btn-sm" onclick="exportMesaCSV()">⬇ Relatório CSV</button></div>
     <div style="overflow-x:auto"><table><thead><tr id="mesa-t-head"></tr></thead><tbody id="mesa-t-body"></tbody></table></div>
   </div>
+</div>
+
+<!-- DIÁRIO -->
+<div class="pg" id="page-diario">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">📓 Diário Operacional</div>
+      <div class="pg-sub">Registre suas anotações, humor e tags por sessão</div>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)" id="diary-month-lbl"></div>
+      <button class="pnl-nav-btn" onclick="shiftDiaryMonth(-1)">‹</button>
+      <button class="pnl-nav-btn" onclick="shiftDiaryMonth(1)">›</button>
+      <button class="btn btn-g btn-sm" onclick="goToDiaryToday()">Hoje</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+    <div>
+      <!-- Calendar -->
+      <div class="diary-cal" id="diary-cal-grid"></div>
+    </div>
+    <div>
+      <!-- Editor -->
+      <div class="diary-editor" id="diary-editor">
+        <div class="diary-editor-hd">
+          <div id="diary-sel-date" class="diary-editor-date">Selecione um dia</div>
+          <div id="diary-sel-pnl" class="diary-editor-pnl"></div>
+        </div>
+        <!-- Humor -->
+        <div style="font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.5rem">Humor da sessão</div>
+        <div class="mood-row" id="mood-row">
+          <button class="mood-btn" data-mood="1" onclick="selectMood(1)" title="Muito ruim">😞</button>
+          <button class="mood-btn" data-mood="2" onclick="selectMood(2)" title="Ruim">😕</button>
+          <button class="mood-btn" data-mood="3" onclick="selectMood(3)" title="Neutro">😐</button>
+          <button class="mood-btn" data-mood="4" onclick="selectMood(4)" title="Bom">🙂</button>
+          <button class="mood-btn" data-mood="5" onclick="selectMood(5)" title="Muito bom">😄</button>
+        </div>
+        <!-- Tags -->
+        <div style="font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.5rem">Tags</div>
+        <div class="tag-row" id="tag-row">
+          <button class="tag-btn" data-tag="Disciplinado"   onclick="toggleTag(this)">Disciplinado</button>
+          <button class="tag-btn" data-tag="Focado"         onclick="toggleTag(this)">Focado</button>
+          <button class="tag-btn" data-tag="No fluxo"       onclick="toggleTag(this)">No fluxo</button>
+          <button class="tag-btn" data-tag="Paciente"       onclick="toggleTag(this)">Paciente</button>
+          <button class="tag-btn" data-tag="Ansioso"        onclick="toggleTag(this)">Ansioso</button>
+          <button class="tag-btn" data-tag="Impulsivo"      onclick="toggleTag(this)">Impulsivo</button>
+          <button class="tag-btn" data-tag="Overtrading"    onclick="toggleTag(this)">Overtrading</button>
+          <button class="tag-btn" data-tag="Revenge"        onclick="toggleTag(this)">Revenge</button>
+          <button class="tag-btn" data-tag="Sem operações"  onclick="toggleTag(this)">Sem operações</button>
+        </div>
+        <!-- Notes -->
+        <div style="font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.5rem">Anotações</div>
+        <textarea class="diary-textarea" id="diary-notes" placeholder="Como foi a sessão? O que aprendeu? O que faria diferente?"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:.75rem;gap:.5rem">
+          <button class="btn btn-g btn-sm" onclick="clearDiaryEditor()">Limpar</button>
+          <button class="btn btn-p" onclick="saveDiaryEntry()">💾 Salvar entrada</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PNL CALENDAR -->
+<div class="pg" id="page-pnl">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">📅 PNL Calendar</div>
+      <div class="pg-sub">Resultado diário por mês · clique no dia para ver o diário</div>
+    </div>
+  </div>
+  <!-- Header stats + nav -->
+  <div class="pnl-header">
+    <div class="pnl-nav">
+      <button class="pnl-nav-btn" onclick="shiftPnlMonth(-1)">‹</button>
+      <div class="pnl-month-lbl" id="pnl-month-lbl">—</div>
+      <button class="pnl-nav-btn" onclick="shiftPnlMonth(1)">›</button>
+    </div>
+    <div class="pnl-stats" id="pnl-stats"></div>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx3)">Conta:</span>
+      <div class="ptabs" style="margin:0;gap:3px" id="pnl-acct-tabs">
+        <button class="ptab on" data-pa="demo" onclick="setPnlAcct('demo')" style="font-size:.58rem;padding:.2rem .55rem">DEMO</button>
+        <button class="ptab"    data-pa="real" onclick="setPnlAcct('real')" style="font-size:.58rem;padding:.2rem .55rem">REAL</button>
+      </div>
+      <button class="btn btn-g btn-sm" onclick="goToPnlToday()">Hoje</button>
+    </div>
+  </div>
+  <!-- Total bar -->
+  <div id="pnl-total-bar" style="margin-bottom:1rem;font-family:var(--mono);font-size:1.5rem;font-weight:700"></div>
+  <!-- Calendar grid -->
+  <div class="pnl-grid" id="pnl-grid"></div>
+  <!-- Streak info -->
+  <div class="pnl-streak" id="pnl-streak"></div>
 </div>
 
 <!-- METAS -->
@@ -1144,6 +1294,8 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-analytics" onclick="nav('analytics');mnavSel(this)"><span class="mi">📈</span>Graf</button>
   <button class="mnbtn"    id="mn-mesa"      onclick="nav('mesa');mnavSel(this)"><span class="mi">👥</span>Mesa</button>
   <button class="mnbtn"    id="mn-metas"     onclick="nav('metas');mnavSel(this)"><span class="mi">🎯</span>Metas</button>
+  <button class="mnbtn"    id="mn-diario"    onclick="nav('diario');mnavSel(this)"><span class="mi">📓</span>Diário</button>
+  <button class="mnbtn"    id="mn-pnl"       onclick="nav('pnl');mnavSel(this)"><span class="mi">📅</span>PNL</button>
   <button class="mnbtn"    id="mn-config"    onclick="nav('config');mnavSel(this)"><span class="mi">⚙️</span>Cfg</button>
 </div>
 <div id="toast"></div>
@@ -1299,6 +1451,8 @@ function nav(page){
   else if(page==='stats'){renderStats();renderSearch();}
   else if(page==='mesa')renderMesa();
   else if(page==='metas')renderMetas();
+  else if(page==='diario')renderDiario();
+  else if(page==='pnl')renderPnl();
   else if(page==='ranking')renderRanking();
   else if(page==='export')renderExpPreview();
   else if(page==='config')renderConfig();
@@ -4391,6 +4545,22 @@ function loadAllUserData(callback){
       done();
     });
 
+  // Load diary entries for current month
+  pending++;
+  var now2=new Date();
+  var dFrom=now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-01';
+  var dTo  =now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-31';
+  supabase.from('diary').select('*').eq('user_id',uid).gte('date',dFrom).lte('date',dTo)
+    .then(function(res){
+      if(res.data&&res.data.length){
+        var dc={};
+        res.data.forEach(function(r){dc[r.date]={content:r.content||'',mood:r.mood||0,tags:r.tags||[]};});
+        var key='dt_diary_'+curAccount+'_'+now2.getFullYear()+'_'+now2.getMonth();
+        localStorage.setItem(key,JSON.stringify(dc));
+      }
+      done();
+    });
+
   // Load goals history
   pending++;
   supabase.from('goals_history').select('*').eq('owner_id',uid)
@@ -4542,6 +4712,323 @@ function sbDeleteDeposit(id){
   supabase.from('deposits').delete().eq('id',id).then(function(res){
     if(res.error)console.warn('sbDeleteDeposit error:',res.error.message);
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DIÁRIO OPERACIONAL
+// ═══════════════════════════════════════════════════════════════════
+
+var diaryMonth = new Date().getMonth();
+var diaryYear  = new Date().getFullYear();
+var diarySelDate = null;   // 'YYYY-MM-DD'
+var diarySelMood = 0;
+var diarySelTags = [];
+var diaryCache   = {};     // date → {content, mood, tags}
+
+var MOODS = ['','😞','😕','😐','🙂','😄'];
+var MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var DAYS_PT   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+// ── LOAD / SAVE diary entries ─────────────────────────────────────────
+function loadDiaryCache(year, month, callback){
+  var key = 'dt_diary_'+curAccount+'_'+year+'_'+month;
+  var cached = localStorage.getItem(key);
+  if(cached){ try{ diaryCache = JSON.parse(cached); }catch(e){ diaryCache = {}; } if(callback) callback(); return; }
+  if(!supabase||!currentUser){ diaryCache = {}; if(callback) callback(); return; }
+  var from = year+'-'+String(month+1).padStart(2,'0')+'-01';
+  var to   = year+'-'+String(month+1).padStart(2,'0')+'-31';
+  supabase.from('diary').select('*').eq('user_id',currentUser.id).gte('date',from).lte('date',to)
+    .then(function(res){
+      diaryCache = {};
+      if(res.data) res.data.forEach(function(r){ diaryCache[r.date] = {content:r.content||'', mood:r.mood||0, tags:r.tags||[]}; });
+      localStorage.setItem(key, JSON.stringify(diaryCache));
+      if(callback) callback();
+    });
+}
+
+function saveDiaryEntry(){
+  if(!diarySelDate){ toast('Selecione um dia primeiro','s'); return; }
+  var notes = ($id('diary-notes')||{}).value||'';
+  var entry = {content:notes, mood:diarySelMood, tags:diarySelTags.slice()};
+  diaryCache[diarySelDate] = entry;
+  var key = 'dt_diary_'+curAccount+'_'+diaryYear+'_'+diaryMonth;
+  localStorage.setItem(key, JSON.stringify(diaryCache));
+  // Push to Supabase
+  if(supabase&&currentUser){
+    supabase.from('diary').upsert({
+      user_id:currentUser.id, date:diarySelDate,
+      content:notes, mood:diarySelMood||null, tags:diarySelTags,
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id,date'}).then(function(res){
+      if(res.error) console.warn('diary save error:',res.error.message);
+    });
+  }
+  renderDiaryCalendar();
+  toast('Entrada salva','g');
+}
+
+// ── GET DAY PNL ───────────────────────────────────────────────────────
+function getDayPnl(isoDate, acct){
+  var ops = (JSON.parse(localStorage.getItem('dt_ops_'+(acct||curAccount))||'[]'))
+    .filter(function(o){ return o.date===isoDate; });
+  var r = 0;
+  ops.forEach(function(o){ r += o.tipo==='GAIN'?(o.val||o.pts*CFG.ptval):-(o.val||o.pts*CFG.ptval); });
+  return {val:r, ops:ops.length};
+}
+
+// ── RENDER DIARY CALENDAR ─────────────────────────────────────────────
+function renderDiaryCalendar(){
+  var grid = $id('diary-cal-grid');
+  if(!grid) return;
+  setText('diary-month-lbl', MONTHS_PT[diaryMonth]+' '+diaryYear);
+  var today = new Date();
+  var todayStr = today.toISOString().slice(0,10);
+  var firstDay = new Date(diaryYear, diaryMonth, 1).getDay();
+  var daysInMonth = new Date(diaryYear, diaryMonth+1, 0).getDate();
+  var html = DAYS_PT.map(function(d){ return '<div class="diary-cal-hd">'+d+'</div>'; }).join('');
+  // Empty cells before first day
+  for(var i=0;i<firstDay;i++) html+='<div class="diary-day empty-day"></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var isoDate = diaryYear+'-'+String(diaryMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var pnl = getDayPnl(isoDate);
+    var entry = diaryCache[isoDate];
+    var cls = 'diary-day';
+    if(isoDate===todayStr) cls+=' today';
+    if(isoDate===diarySelDate) cls+=' selected';
+    if(pnl.ops>0) cls += pnl.val>=0?' gain':' stop';
+    var pnlHtml = pnl.ops>0 ? '<div class="diary-day-pnl '+(pnl.val>=0?'cg':'cs')+'">'+(pnl.val>=0?'+':'')+fmtR(pnl.val)+'</div>' : '';
+    var moodHtml = entry&&entry.mood ? '<div class="diary-day-mood">'+MOODS[entry.mood]+'</div>' : '';
+    html+='<div class="'+cls+'" onclick="selectDiaryDay(&quot;'+isoDate+'&quot;)">'+
+      '<div class="diary-day-num">'+d+'</div>'+pnlHtml+moodHtml+'</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function selectDiaryDay(isoDate){
+  diarySelDate = isoDate;
+  // Parse date parts
+  var parts = isoDate.split('-');
+  var dateObj = new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  var daysNamesPT = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  setText('diary-sel-date', daysNamesPT[dateObj.getDay()]+', '+parseInt(parts[2])+' de '+MONTHS_PT[parseInt(parts[1])-1]+' '+parts[0]);
+  var pnl = getDayPnl(isoDate);
+  var pnlEl = $id('diary-sel-pnl');
+  if(pnlEl){
+    pnlEl.textContent = pnl.ops>0 ? (pnl.val>=0?'+':'')+fmtR(pnl.val)+' ('+pnl.ops+' ops)' : 'Sem operações';
+    pnlEl.className = 'diary-editor-pnl '+(pnl.val>0?'cg':pnl.val<0?'cs':'cm');
+  }
+  var entry = diaryCache[isoDate]||{content:'',mood:0,tags:[]};
+  var notesEl = $id('diary-notes');
+  if(notesEl) notesEl.value = entry.content||'';
+  diarySelMood = entry.mood||0;
+  diarySelTags = (entry.tags||[]).slice();
+  // Update mood buttons
+  document.querySelectorAll('.mood-btn').forEach(function(b){
+    b.classList.toggle('selected', parseInt(b.getAttribute('data-mood'))===diarySelMood);
+  });
+  // Update tag buttons
+  document.querySelectorAll('.tag-btn').forEach(function(b){
+    b.classList.toggle('selected', diarySelTags.indexOf(b.getAttribute('data-tag'))>=0);
+  });
+  renderDiaryCalendar();
+}
+
+function selectMood(m){
+  diarySelMood = diarySelMood===m?0:m;
+  document.querySelectorAll('.mood-btn').forEach(function(b){
+    b.classList.toggle('selected', parseInt(b.getAttribute('data-mood'))===diarySelMood);
+  });
+}
+
+function toggleTag(btn){
+  var tag = btn.getAttribute('data-tag');
+  var idx = diarySelTags.indexOf(tag);
+  if(idx>=0) diarySelTags.splice(idx,1); else diarySelTags.push(tag);
+  btn.classList.toggle('selected', diarySelTags.indexOf(tag)>=0);
+}
+
+function clearDiaryEditor(){
+  diarySelMood=0; diarySelTags=[];
+  var n=$id('diary-notes'); if(n)n.value='';
+  document.querySelectorAll('.mood-btn').forEach(function(b){b.classList.remove('selected');});
+  document.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('selected');});
+}
+
+function shiftDiaryMonth(dir){
+  diaryMonth+=dir;
+  if(diaryMonth>11){diaryMonth=0;diaryYear++;}
+  if(diaryMonth<0){diaryMonth=11;diaryYear--;}
+  diarySelDate=null;
+  loadDiaryCache(diaryYear,diaryMonth,renderDiaryCalendar);
+}
+
+function goToDiaryToday(){
+  diaryMonth=new Date().getMonth(); diaryYear=new Date().getFullYear();
+  loadDiaryCache(diaryYear,diaryMonth,function(){ renderDiaryCalendar(); selectDiaryDay(new Date().toISOString().slice(0,10)); });
+}
+
+function renderDiario(){
+  loadDiaryCache(diaryYear, diaryMonth, function(){
+    renderDiaryCalendar();
+    // Auto-select today if in current month
+    var now=new Date();
+    if(diaryYear===now.getFullYear()&&diaryMonth===now.getMonth()){
+      selectDiaryDay(now.toISOString().slice(0,10));
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PNL CALENDAR
+// ═══════════════════════════════════════════════════════════════════
+
+var pnlMonth = new Date().getMonth();
+var pnlYear  = new Date().getFullYear();
+var pnlAcct  = 'demo';
+
+function setPnlAcct(a){
+  pnlAcct=a;
+  document.querySelectorAll('#pnl-acct-tabs .ptab').forEach(function(b){
+    b.classList.toggle('on',b.getAttribute('data-pa')===a);
+  });
+  renderPnlCalendar();
+}
+
+function shiftPnlMonth(dir){
+  pnlMonth+=dir;
+  if(pnlMonth>11){pnlMonth=0;pnlYear++;}
+  if(pnlMonth<0){pnlMonth=11;pnlYear--;}
+  renderPnlCalendar();
+}
+
+function goToPnlToday(){
+  pnlMonth=new Date().getMonth(); pnlYear=new Date().getFullYear();
+  renderPnlCalendar();
+}
+
+function renderPnlCalendar(){
+  var grid=$id('pnl-grid'); if(!grid)return;
+  var allOps = JSON.parse(localStorage.getItem('dt_ops_'+pnlAcct)||'[]');
+  var today = new Date();
+  var todayStr = today.toISOString().slice(0,10);
+  var firstDay = new Date(pnlYear,pnlMonth,1).getDay();
+  var daysInMonth = new Date(pnlYear,pnlMonth+1,0).getDate();
+  var now = new Date();
+  var isCurrentMonth = pnlYear===now.getFullYear()&&pnlMonth===now.getMonth();
+
+  // Build day data map
+  var dayMap={};
+  allOps.forEach(function(o){
+    var mo=parseInt(o.date.slice(5,7))-1;
+    var yr=parseInt(o.date.slice(0,4));
+    if(mo!==pnlMonth||yr!==pnlYear)return;
+    if(!dayMap[o.date])dayMap[o.date]={val:0,ops:0};
+    dayMap[o.date].val+=o.tipo==='GAIN'?(o.val||o.pts*CFG.ptval):-(o.val||o.pts*CFG.ptval);
+    dayMap[o.date].ops++;
+  });
+
+  // Stats
+  var totalVal=0, gainDays=0, stopDays=0, opDays=0;
+  var vals=Object.values(dayMap);
+  vals.forEach(function(d){totalVal+=d.val;if(d.val>0)gainDays++;else stopDays++;opDays++;});
+  var bestDay=vals.length?Math.max.apply(null,vals.map(function(d){return d.val;})):0;
+  var worstDay=vals.length?Math.min.apply(null,vals.map(function(d){return d.val;})):0;
+
+  // Streak
+  var curStreak=0,bestStreak=0,tmpStreak=0;
+  var allDays=[];
+  for(var d=1;d<=daysInMonth;d++){
+    var iso=pnlYear+'-'+String(pnlMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    allDays.push(iso);
+  }
+  allDays.forEach(function(iso){
+    if(dayMap[iso]&&dayMap[iso].val>0){tmpStreak++;bestStreak=Math.max(bestStreak,tmpStreak);}
+    else tmpStreak=0;
+  });
+  // Current streak (from today backwards)
+  for(var i=allDays.length-1;i>=0;i--){
+    var iso=allDays[i];
+    if(iso>todayStr)continue;
+    if(dayMap[iso]&&dayMap[iso].val>0)curStreak++;
+    else break;
+  }
+
+  // Update header
+  setText('pnl-month-lbl', MONTHS_PT[pnlMonth]+' '+pnlYear);
+  var liqCls=totalVal>0?'cg':totalVal<0?'cs':'cm';
+  var tb=$id('pnl-total-bar');
+  if(tb){
+    tb.innerHTML='<span class="'+liqCls+'">'+(totalVal>=0?'+':'')+fmtR(totalVal)+'</span>'+
+      '<span style="font-family:var(--mono);font-size:.65rem;font-weight:400;color:var(--tx3);margin-left:.75rem">'+opDays+' dias operados</span>';
+  }
+  var statsEl=$id('pnl-stats');
+  if(statsEl){
+    statsEl.innerHTML=
+      '<div class="pnl-stat"><div class="pnl-stat-lbl">Gains dias</div><div class="pnl-stat-val cg">'+gainDays+'</div></div>'+
+      '<div class="pnl-stat"><div class="pnl-stat-lbl">Stop dias</div><div class="pnl-stat-val cs">'+stopDays+'</div></div>'+
+      '<div class="pnl-stat"><div class="pnl-stat-lbl">Melhor dia</div><div class="pnl-stat-val cg">'+(bestDay?'+'+fmtR(bestDay):'—')+'</div></div>'+
+      '<div class="pnl-stat"><div class="pnl-stat-lbl">Pior dia</div><div class="pnl-stat-val cs">'+(worstDay<0?fmtR(worstDay):'—')+'</div></div>';
+  }
+  var streakEl=$id('pnl-streak');
+  if(streakEl){
+    streakEl.innerHTML=
+      '<span>Sequência atual: <strong class="cg">'+curStreak+' dias</strong></span>'+
+      '<span>Melhor sequência no mês: <strong class="cg">'+bestStreak+' dias</strong></span>';
+  }
+
+  // Max abs value for color intensity
+  var maxAbs=0;
+  Object.values(dayMap).forEach(function(d){maxAbs=Math.max(maxAbs,Math.abs(d.val));});
+
+  // Render grid
+  var html=DAYS_PT.map(function(d){return'<div class="pnl-dow">'+d+'</div>';}).join('');
+  for(var i=0;i<firstDay;i++)html+='<div></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var iso=pnlYear+'-'+String(pnlMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var isFuture=iso>todayStr&&!isCurrentMonth||iso>todayStr;
+    var data=dayMap[iso];
+    var cls='pnl-cell';
+    var valHtml='';
+    var opsHtml='';
+    if(isFuture){
+      cls+=' future';
+    } else if(!data){
+      cls+=' nodata';
+    } else {
+      var intensity=maxAbs>0?Math.abs(data.val)/maxAbs:0;
+      if(data.val>0) cls+=intensity>0.6?' gain-hi':' gain';
+      else cls+=intensity>0.6?' stop-hi':' stop';
+      valHtml='<div class="pnl-cell-val '+(data.val>0?'cg':'cs')+'">'+(data.val>=0?'+':'')+fmtR(data.val)+'</div>';
+      opsHtml='<div class="pnl-cell-ops">'+data.ops+' op'+(data.ops>1?'s':'')+'</div>';
+    }
+    if(iso===todayStr)cls+=' today-cell';
+    var clickable=!isFuture?'onclick="openPnlDay(&quot;'+iso+'&quot;)"':'';
+    html+='<div class="'+cls+'" '+clickable+'>'+
+      '<div class="pnl-cell-num">'+d+'</div>'+valHtml+opsHtml+'</div>';
+  }
+  grid.innerHTML=html;
+}
+
+function openPnlDay(iso){
+  // Navigate to diary for this day
+  var parts=iso.split('-');
+  var yr=parseInt(parts[0]);
+  var mo=parseInt(parts[1])-1;
+  diaryYear=yr; diaryMonth=mo;
+  nav('diario');
+  loadDiaryCache(yr,mo,function(){
+    renderDiaryCalendar();
+    selectDiaryDay(iso);
+  });
+}
+
+function renderPnl(){
+  // Sync account tab with current account
+  pnlAcct=curAccount;
+  document.querySelectorAll('#pnl-acct-tabs .ptab').forEach(function(b){
+    b.classList.toggle('on',b.getAttribute('data-pa')===pnlAcct);
+  });
+  renderPnlCalendar();
 }
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
