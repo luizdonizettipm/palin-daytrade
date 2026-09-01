@@ -989,6 +989,13 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <div style="display:flex;flex-direction:column;gap:.85rem">
       <div class="fg"><label>Nome completo</label><input type="text" id="at-name" placeholder="ex: João Silva" maxlength="40"></div>
       <div class="fg"><label>Sigla (2-4 letras)</label><input type="text" id="at-tag" placeholder="ex: JS" maxlength="4" style="width:80px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="fg">
+        <label>Vincular ao usuário (opcional)</label>
+        <select id="at-user-id" style="font-family:var(--mono);font-size:.75rem;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.45rem .65rem;color:var(--tx);width:100%">
+          <option value="">— Sem vínculo (importação manual) —</option>
+        </select>
+        <div style="font-family:var(--mono);font-size:.57rem;color:var(--tx3);margin-top:.2rem">Vinculando ao usuário, o gestor verá as operações que ele registrar no app</div>
+      </div>
       <div class="fg" style="width:180px">
         <label>Nº de contratos por operação</label>
         <input type="number" id="at-contratos" min="1" step="1" value="1" placeholder="1" oninput="updateAtEmolPreview()">
@@ -1876,6 +1883,10 @@ function openAddTrader(){
   $id('at-save-btn').onclick=saveAddTrader;
   $id('at-name').value='';$id('at-tag').value='';
   var ctEl=$id('at-contratos');if(ctEl)ctEl.value=CFG.contratos||1;
+  // Load profiles for user selector
+  if(getRole()==='gestor'){
+    loadAllProfiles(function(){ populateUserSelector(''); });
+  }
   initColorPicker();
   updateAtEmolPreview();
   $id('add-trader-modal').classList.add('show');
@@ -1894,6 +1905,10 @@ function openEditTrader(tid){
   var ctEl=$id('at-contratos');if(ctEl)ctEl.value=t.contratos||1;
   updateAtEmolPreview();
   initColorPicker(t.color);
+  // Load profiles for user selector and pre-select linked user
+  if(getRole()==='gestor'){
+    loadAllProfiles(function(){ populateUserSelector(t.linkedUserId||''); });
+  }
   $id('add-trader-modal').classList.add('show');
 }
 function saveEditTrader(){
@@ -1906,6 +1921,7 @@ function saveEditTrader(){
   for(var i=0;i<traders.length;i++){
     if(traders[i].id===atEditId){
       traders[i].name=name;
+      traders[i].linkedUserId=($id('at-user-id')||{}).value||traders[i].linkedUserId||'';
       traders[i].tag=tag;
       traders[i].color=color;
       traders[i].contratos=parseInt(($id('at-contratos')||{}).value)||1;
@@ -1923,7 +1939,8 @@ function saveAddTrader(){
   if(!name){toast('Informe o nome','s');return;}
   if(!tag)tag=name.slice(0,2).toUpperCase();
   var contratos=parseInt(($id('at-contratos')||{}).value)||1;
-  var traders=loadTraders();traders.push({id:uid(),name:name,tag:tag,color:getSelColor(),contratos:contratos});
+  var linkedUid=($id('at-user-id')||{}).value||'';
+  var traders=loadTraders();traders.push({id:uid(),name:name,tag:tag,color:getSelColor(),contratos:contratos,linkedUserId:linkedUid});
   saveTraders(traders);populateTraderSel();closeAddTrader();
   if(curPage==='mesa')renderMesa();if(curPage==='ranking')renderRanking();
   toast('Trader '+name+' cadastrado','t');
@@ -1990,7 +2007,12 @@ function renderMesa(){
     html+='<div class="tstat"><div class="tstat-lbl">Stops</div><div class="tstat-val cs">-'+fmtN(c.stops)+' pts</div></div>';
     html+='<div class="tstat"><div class="tstat-lbl">WR</div><div class="tstat-val ca">'+(c.wr!==null?c.wr+'%':'--')+'</div></div>';
     html+='</div></div>';
-    html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)"><button class="btn btn-g btn-sm" onclick="openEditTrader(\''+t.id+'\')">✏ Editar</button></div>';
+    var hasLink=t.linkedUserId?true:false;
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .85rem;border-top:1px solid var(--b1)">';
+    if(getRole()==='gestor'&&hasLink)html+='<button class="btn btn-sm" onclick="openGestorView(&quot;'+t.id+'&quot;)" style="font-size:.6rem;background:#0d1a2e;color:var(--acc);border:1px solid var(--acc)44">👁 Ver dados</button>';
+    else html+='<span></span>';
+    html+='<button class="btn btn-g btn-sm" onclick="openEditTrader(&quot;'+t.id+'&quot;)">✏ Editar</button>';
+    html+='</div>';
     html+='</div>';
   });
   grid.innerHTML=html;
@@ -4283,6 +4305,8 @@ function onAuthSuccess(){
     loadAllUserData(function(){
       seedDemo();loadCFG();onTipo();
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
+      // Load profiles for gestor view
+      if(getRole()==='gestor') loadAllProfiles(function(){});
       initRoleSystem();
       toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
     });
@@ -4583,7 +4607,7 @@ function sbPushTraders(traders, acct){
   if(!supabase||!currentUser)return;
   var uid=currentUser.id;
   var rows=traders.map(function(t){
-    return{id:t.id,owner_id:uid,account_type:acct||curAccount,name:t.name,tag:t.tag,color:t.color,contratos:t.contratos||1};
+    return{id:t.id,owner_id:uid,account_type:acct||curAccount,name:t.name,tag:t.tag,color:t.color,contratos:t.contratos||1,user_id:t.linkedUserId||null};
   });
   supabase.from('traders').upsert(rows,{onConflict:'id'}).then(function(res){
     if(res.error)console.warn('sbPushTraders error:',res.error.message);
@@ -5113,6 +5137,210 @@ function toggleProfitPanel(){
   } else {
     resetProfitImport();
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GESTOR VISION — View any trader's data from Supabase
+// ═══════════════════════════════════════════════════════════════════
+
+var gestorProfiles = [];  // all user profiles from Supabase
+
+// ── LOAD ALL PROFILES (called on gestor login) ─────────────────────────
+function loadAllProfiles(callback){
+  if(!supabase||!currentUser||getRole()!=='gestor'){if(callback)callback([]);return;}
+  supabase.from('profiles').select('*').order('name')
+    .then(function(res){
+      gestorProfiles = res.data||[];
+      if(callback)callback(gestorProfiles);
+    });
+}
+
+// ── POPULATE USER SELECTOR IN TRADER MODAL ───────────────────────────
+function populateUserSelector(selectedId){
+  var sel=$id('at-user-id');if(!sel)return;
+  // Keep default option
+  var html='<option value="">— Sem vínculo (importação manual) —</option>';
+  gestorProfiles.forEach(function(p){
+    var selected=p.id===(selectedId||'')?'selected':'';
+    var roleLabel=p.role==='trader'?'Trader':p.role==='diretor'?'Diretor':'Gestor';
+    html+='<option value="'+p.id+'" '+selected+'>'+p.name+' ('+roleLabel+')</option>';
+  });
+  sel.innerHTML=html;
+}
+
+// ── GESTOR VIEW PAGE ──────────────────────────────────────────────────
+// Fetch a trader's ops from Supabase by user_id
+function fetchTraderOpsFromDB(userId, acct, from, to, callback){
+  if(!supabase||!userId){callback([]);return;}
+  var q=supabase.from('operations').select('*').eq('user_id',userId).eq('account_type',acct||'demo');
+  if(from)q=q.gte('date',from);
+  if(to)q=q.lte('date',to);
+  q.order('ts',{ascending:true}).then(function(res){
+    var ops=(res.data||[]).map(function(r){
+      return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts),val:parseFloat(r.val||0),obs:r.obs||''};
+    });
+    callback(ops);
+  });
+}
+
+// Fetch a user's diary from Supabase
+function fetchTraderDiaryFromDB(userId, from, to, callback){
+  if(!supabase||!userId){callback([]);return;}
+  var q=supabase.from('diary').select('*').eq('user_id',userId);
+  if(from)q=q.gte('date',from);
+  if(to)q=q.lte('date',to);
+  q.order('date',{ascending:false}).then(function(res){
+    callback(res.data||[]);
+  });
+}
+
+// ── GESTOR VIEW MODAL ─────────────────────────────────────────────────
+var gestorViewUserId   = null;
+var gestorViewUserName = null;
+var gestorViewAcct     = 'demo';
+var gestorViewPeriod   = '30';
+
+function openGestorView(traderId){
+  var traders=loadTraders();
+  var t=traders.filter(function(x){return x.id===traderId;})[0];
+  if(!t){toast('Trader não encontrado','s');return;}
+  if(!t.linkedUserId){
+    toast('Este trader não tem usuário vinculado. Edite o cadastro para vincular.','s');
+    return;
+  }
+  gestorViewUserId   = t.linkedUserId;
+  gestorViewUserName = t.name;
+  gestorViewAcct     = curAccount;
+
+  // Build and show modal
+  var existing=$id('gestor-view-modal');
+  if(existing)existing.remove();
+
+  var modal=document.createElement('div');
+  modal.id='gestor-view-modal';
+  modal.className='mbk show';
+  modal.innerHTML=
+    '<div class="mdl" style="max-width:800px">'+
+    '<div class="mdl-title" style="display:flex;align-items:center;justify-content:space-between">'+
+    '<span>👁 '+t.name+'</span>'+
+    '<div style="display:flex;gap:.5rem;align-items:center">'+
+    '<div class="ptabs" style="margin:0;gap:3px">'+
+    '<button class="ptab '+(gestorViewAcct==='demo'?'on':'')+'" onclick="setGestorAcct(&quot;demo&quot;)" style="font-size:.58rem;padding:.2rem .55rem">DEMO</button>'+
+    '<button class="ptab '+(gestorViewAcct==='real'?'on':'')+'" onclick="setGestorAcct(&quot;real&quot;)" style="font-size:.58rem;padding:.2rem .55rem">REAL</button>'+
+    '</div>'+
+    '<select id="gv-period" onchange="refreshGestorView()" style="font-family:var(--mono);font-size:.65rem;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.25rem .5rem;color:var(--tx)">'+
+    '<option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="90">90 dias</option><option value="0">Tudo</option>'+
+    '</select>'+
+    '</div></div>'+
+    '<div id="gv-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.65rem;margin-bottom:1rem"></div>'+
+    '<div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.5rem">Operações</div>'+
+    '<div id="gv-ops-wrap" style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);max-height:240px;overflow-y:auto;margin-bottom:1rem">'+
+    '<table style="width:100%"><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Pts</th><th>R$</th><th>Obs</th></tr></thead>'+
+    '<tbody id="gv-ops-tbody"></tbody></table></div>'+
+    '<div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.5rem">Diário recente</div>'+
+    '<div id="gv-diary-wrap" style="display:flex;flex-direction:column;gap:.5rem;max-height:200px;overflow-y:auto;margin-bottom:1rem"></div>'+
+    '<div class="mdl-foot"><button class="btn btn-g" onclick="closeGestorView()">Fechar</button></div>'+
+    '</div>';
+  document.body.appendChild(modal);
+  refreshGestorView();
+}
+
+function setGestorAcct(a){
+  gestorViewAcct=a;
+  document.querySelectorAll('#gestor-view-modal .ptab').forEach(function(b){
+    b.classList.toggle('on',b.textContent.trim().toLowerCase()===a);
+  });
+  refreshGestorView();
+}
+
+function refreshGestorView(){
+  if(!gestorViewUserId)return;
+  var period=parseInt(($id('gv-period')||{}).value||'30');
+  var from=null,to=null;
+  if(period>0){
+    var d=new Date();d.setDate(d.getDate()-period);
+    from=d.toISOString().slice(0,10);
+    to=new Date().toISOString().slice(0,10);
+  }
+
+  var kpisEl=$id('gv-kpis');
+  var tbodyEl=$id('gv-ops-tbody');
+  var diaryEl=$id('gv-diary-wrap');
+  if(kpisEl)kpisEl.innerHTML='<div style="font-family:var(--mono);font-size:.7rem;color:var(--tx3)">Carregando...</div>';
+
+  fetchTraderOpsFromDB(gestorViewUserId,gestorViewAcct,from,to,function(ops){
+    // KPIs
+    var gains=ops.filter(function(o){return o.tipo==='GAIN';});
+    var stops=ops.filter(function(o){return o.tipo==='STOP';});
+    var totalPts=gains.reduce(function(s,o){return s+o.pts;},0)-stops.reduce(function(s,o){return s+o.pts;},0);
+    var totalR=ops.reduce(function(s,o){return s+(o.tipo==='GAIN'?(o.val||0):-(o.val||0));},0);
+    var wr=ops.length>0?Math.round(gains.length/ops.length*100):0;
+    var nc=totalPts>=0?'cg':'cs';
+
+    if(kpisEl){
+      kpisEl.innerHTML=[
+        {l:'Resultado',v:(totalPts>=0?'+':'')+fmtN(Math.round(totalPts))+' pts',c:nc},
+        {l:'Resultado R$',v:(totalR>=0?'+':'')+fmtR(totalR),c:nc},
+        {l:'Operações',v:ops.length,c:'cm'},
+        {l:'Gains',v:gains.length,c:'cg'},
+        {l:'Stops',v:stops.length,c:'cs'},
+        {l:'Winrate',v:wr+'%',c:'ca'},
+      ].map(function(k){
+        return'<div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:.65rem .85rem">'+
+          '<div style="font-family:var(--mono);font-size:.52rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);margin-bottom:.25rem">'+k.l+'</div>'+
+          '<div style="font-family:var(--mono);font-size:.95rem;font-weight:700" class="'+k.c+'">'+k.v+'</div>'+
+          '</div>';
+      }).join('');
+    }
+
+    // Ops table
+    if(tbodyEl){
+      if(!ops.length){
+        tbodyEl.innerHTML='<tr><td colspan="6" class="cd" style="text-align:center;padding:1rem">Nenhuma operação no período</td></tr>';
+      } else {
+        tbodyEl.innerHTML=ops.slice().reverse().slice(0,50).map(function(o){
+          var nc=o.tipo==='GAIN'?'cg':'cs';
+          return'<tr>'+
+            '<td class="cm" style="padding:.35rem .6rem;white-space:nowrap">'+fmtDate(o.date)+'</td>'+
+            '<td class="cd">'+o.time+'</td>'+
+            '<td><span class="badge '+(o.tipo==='GAIN'?'bg':'bs')+'">'+o.tipo+'</span></td>'+
+            '<td class="'+nc+'">'+(o.tipo==='GAIN'?'+':'-')+fmtN(o.pts)+'</td>'+
+            '<td class="'+nc+'">'+(o.val>0?(o.tipo==='GAIN'?'+':'-')+fmtR(o.val):'—')+'</td>'+
+            '<td class="cd">'+o.obs+'</td>'+
+            '</tr>';
+        }).join('');
+      }
+    }
+  });
+
+  // Diary
+  fetchTraderDiaryFromDB(gestorViewUserId,from,to,function(entries){
+    if(!diaryEl)return;
+    var MOODS_LIST=['','😞','😕','😐','🙂','😄'];
+    if(!entries.length){
+      diaryEl.innerHTML='<div style="font-family:var(--mono);font-size:.7rem;color:var(--tx3)">Nenhuma entrada no diário</div>';
+      return;
+    }
+    diaryEl.innerHTML=entries.slice(0,10).map(function(e){
+      var tags=(e.tags||[]).map(function(t){
+        return'<span style="font-family:var(--mono);font-size:.55rem;padding:.15rem .45rem;border-radius:10px;border:1px solid var(--b2);color:var(--tx3)">'+t+'</span>';
+      }).join(' ');
+      return'<div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:.65rem .85rem">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">'+
+        '<span style="font-family:var(--mono);font-size:.68rem;font-weight:700">'+fmtDate(e.date)+'</span>'+
+        '<span style="font-size:1rem">'+MOODS_LIST[e.mood||0]+'</span>'+
+        '</div>'+
+        (tags?'<div style="margin-bottom:.3rem">'+tags+'</div>':'')+
+        (e.content?'<div style="font-family:var(--mono);font-size:.68rem;color:var(--tx2);line-height:1.5">'+e.content+'</div>':'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Sem anotações</div>')+
+        '</div>';
+    }).join('');
+  });
+}
+
+function closeGestorView(){
+  var m=$id('gestor-view-modal');
+  if(m)m.remove();
+  gestorViewUserId=null;
 }
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
