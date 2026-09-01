@@ -3385,14 +3385,30 @@ function renderMesaTotalBanner(){
 
   var liqCls=grandLiq>0?'cg':grandLiq<0?'cs':'cm';
   var ptsCls=grandPts>0?'cg':grandPts<0?'cs':'cm';
+  // Build individual trader breakdown
+  var traderBreakdown='';
+  traders.forEach(function(t){
+    var tOps=getTOpsFiltered(t.id,mesaPeriod);
+    var tLiq=0;tOps.forEach(function(o){tLiq+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
+    var tc=tLiq>0?'cg':tLiq<0?'cs':'cm';
+    traderBreakdown+=
+      '<div class="mtb-stat">'+
+      '<div class="mtb-stat-lbl" style="color:'+t.color+'">'+(t.tag||t.name.slice(0,4))+'</div>'+
+      '<div class="mtb-stat-val '+tc+'">'+(tLiq>=0?'+':'')+fmtR(tLiq)+'</div>'+
+      '</div>';
+  });
+
   existing.innerHTML=
     '<div><div class="mtb-title">⚡ Total Consolidado da Mesa</div>'+
-    '<div class="mtb-val '+liqCls+'">'+(grandLiq>=0?'+':'')+fmtR(grandLiq)+'</div></div>'+
+    '<div class="mtb-val '+liqCls+'">'+(grandLiq>=0?'+':'')+fmtR(grandLiq)+'</div>'+
+    '<div style="font-family:var(--mono);font-size:.58rem;color:var(--tx3);margin-top:.2rem">'+(grandPts>=0?'+':'')+fmtN(Math.round(grandPts))+' pts · '+totalOps+' ops</div>'+
+    '</div>'+
     '<div class="mtb-stats">'+
-    '<div class="mtb-stat"><div class="mtb-stat-lbl">Pontos (mesa)</div><div class="mtb-stat-val '+ptsCls+'">'+(grandPts>=0?'+':'')+fmtN(Math.round(grandPts))+'</div></div>'+
-    '<div class="mtb-stat"><div class="mtb-stat-lbl">Ops totais</div><div class="mtb-stat-val cm">'+totalOps+'</div></div>'+
-    '<div class="mtb-stat"><div class="mtb-stat-lbl">Diretor R$</div><div class="mtb-stat-val '+(dirLiq>0?'cg':dirLiq<0?'cs':'cm')+'">'+(dirLiq>=0?'+':'')+fmtR(dirLiq)+'</div></div>'+
-    '<div class="mtb-stat"><div class="mtb-stat-lbl">Traders R$</div><div class="mtb-stat-val '+(traderLiq>0?'cg':traderLiq<0?'cs':'cm')+'">'+(traderLiq>=0?'+':'')+fmtR(traderLiq)+'</div></div>'+
+    '<div class="mtb-stat">'+
+    '<div class="mtb-stat-lbl" style="color:var(--purp)">DIR</div>'+
+    '<div class="mtb-stat-val '+(dirLiq>0?'cg':dirLiq<0?'cs':'cm')+'">'+(dirLiq>=0?'+':'')+fmtR(dirLiq)+'</div>'+
+    '</div>'+
+    traderBreakdown+
     '</div>';
 }
 
@@ -5224,6 +5240,7 @@ var gestorViewUserId   = null;
 var gestorViewUserName = null;
 var gestorViewAcct     = 'demo';
 var gestorViewPeriod   = '30';
+var gestorViewDiaryDate = null;  // current diary date being viewed
 
 function openGestorView(traderId){
   var traders=loadTraders();
@@ -5236,6 +5253,7 @@ function openGestorView(traderId){
   gestorViewUserId   = t.linkedUserId;
   gestorViewUserName = t.name;
   gestorViewAcct     = curAccount;
+  gestorViewDiaryDate = new Date().toISOString().slice(0,10);
 
   // Build and show modal
   var existing=$id('gestor-view-modal');
@@ -5262,8 +5280,15 @@ function openGestorView(traderId){
     '<div id="gv-ops-wrap" style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);max-height:240px;overflow-y:auto;margin-bottom:1rem">'+
     '<table style="width:100%"><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Pts</th><th>R$</th><th>Obs</th></tr></thead>'+
     '<tbody id="gv-ops-tbody"></tbody></table></div>'+
-    '<div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.5rem">Diário recente</div>'+
-    '<div id="gv-diary-wrap" style="display:flex;flex-direction:column;gap:.5rem;max-height:200px;overflow-y:auto;margin-bottom:1rem"></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem">'+
+    '<div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3)">Diário</div>'+
+    '<div style="display:flex;align-items:center;gap:.4rem">'+
+    '<button class="pnl-nav-btn" style="width:1.5rem;height:1.5rem;font-size:.7rem" onclick="shiftGvDiary(-1)">‹</button>'+
+    '<span id="gv-diary-date" style="font-family:var(--mono);font-size:.65rem;color:var(--tx);min-width:90px;text-align:center"></span>'+
+    '<button class="pnl-nav-btn" style="width:1.5rem;height:1.5rem;font-size:.7rem" onclick="shiftGvDiary(1)">›</button>'+
+    '<button class="btn btn-g btn-sm" style="font-size:.58rem;padding:.2rem .5rem" onclick="gvDiaryGoToday()">Hoje</button>'+
+    '</div></div>'+
+    '<div id="gv-diary-wrap" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem"></div>'+
     '<div class="mdl-foot"><button class="btn btn-g" onclick="closeGestorView()">Fechar</button></div>'+
     '</div>';
   document.body.appendChild(modal);
@@ -5338,34 +5363,69 @@ function refreshGestorView(){
     }
   });
 
-  // Diary
-  fetchTraderDiaryFromDB(gestorViewUserId,from,to,function(entries){
-    if(!diaryEl)return;
-    var MOODS_LIST=['','😞','😕','😐','🙂','😄'];
-    if(!entries.length){
-      diaryEl.innerHTML='<div style="font-family:var(--mono);font-size:.7rem;color:var(--tx3)">Nenhuma entrada no diário</div>';
-      return;
-    }
-    diaryEl.innerHTML=entries.slice(0,10).map(function(e){
-      var tags=(e.tags||[]).map(function(t){
-        return'<span style="font-family:var(--mono);font-size:.55rem;padding:.15rem .45rem;border-radius:10px;border:1px solid var(--b2);color:var(--tx3)">'+t+'</span>';
-      }).join(' ');
-      return'<div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:.65rem .85rem">'+
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">'+
-        '<span style="font-family:var(--mono);font-size:.68rem;font-weight:700">'+fmtDate(e.date)+'</span>'+
-        '<span style="font-size:1rem">'+MOODS_LIST[e.mood||0]+'</span>'+
-        '</div>'+
-        (tags?'<div style="margin-bottom:.3rem">'+tags+'</div>':'')+
-        (e.content?'<div style="font-family:var(--mono);font-size:.68rem;color:var(--tx2);line-height:1.5">'+e.content+'</div>':'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Sem anotações</div>')+
-        '</div>';
-    }).join('');
-  });
+  // Diary — load for current selected date
+  loadGestorDiaryEntry();
 }
 
 function closeGestorView(){
   var m=$id('gestor-view-modal');
   if(m)m.remove();
   gestorViewUserId=null;
+  gestorViewDiaryDate=null;
+}
+
+function shiftGvDiary(dir){
+  if(!gestorViewDiaryDate)return;
+  var d=new Date(gestorViewDiaryDate+'T12:00:00');
+  d.setDate(d.getDate()+dir);
+  gestorViewDiaryDate=d.toISOString().slice(0,10);
+  loadGestorDiaryEntry();
+}
+
+function gvDiaryGoToday(){
+  gestorViewDiaryDate=new Date().toISOString().slice(0,10);
+  loadGestorDiaryEntry();
+}
+
+function loadGestorDiaryEntry(){
+  if(!gestorViewDiaryDate||!gestorViewUserId)return;
+  var dateEl=$id('gv-diary-date');
+  var diaryEl=$id('gv-diary-wrap');
+  if(!diaryEl)return;
+
+  // Update date label
+  var parts=gestorViewDiaryDate.split('-');
+  var dobj=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  var dayNames=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  if(dateEl)dateEl.textContent=dayNames[dobj.getDay()]+', '+fmtDate(gestorViewDiaryDate);
+
+  diaryEl.innerHTML='<div style="font-family:var(--mono);font-size:.7rem;color:var(--tx3)">Carregando...</div>';
+
+  // Fetch single day from Supabase
+  if(!supabase){diaryEl.innerHTML='<div style="font-family:var(--mono);font-size:.7rem;color:var(--tx3)">Sem conexão</div>';return;}
+  supabase.from('diary').select('*').eq('user_id',gestorViewUserId).eq('date',gestorViewDiaryDate).maybeSingle()
+    .then(function(res){
+      var MOODS_LIST=['','😞','😕','😐','🙂','😄'];
+      var e=res.data;
+      if(!e){
+        diaryEl.innerHTML='<div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:.85rem 1rem;font-family:var(--mono);font-size:.7rem;color:var(--tx3)">Nenhuma entrada neste dia.</div>';
+        return;
+      }
+      var tags=(e.tags||[]).map(function(t){
+        return'<span style="font-family:var(--mono);font-size:.58rem;padding:.2rem .55rem;border-radius:12px;border:1px solid var(--acc)44;color:var(--acc)">'+t+'</span>';
+      }).join(' ');
+      diaryEl.innerHTML=
+        '<div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:.85rem 1rem">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">'+
+        '<div style="font-family:var(--mono);font-size:.65rem;font-weight:700;color:var(--tx)">'+fmtDate(e.date)+'</div>'+
+        '<div style="font-size:1.3rem">'+MOODS_LIST[e.mood||0]+'</div>'+
+        '</div>'+
+        (tags?'<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem">'+tags+'</div>':'')+
+        (e.content?
+          '<div style="font-family:var(--mono);font-size:.72rem;color:var(--tx2);line-height:1.65;white-space:pre-wrap">'+e.content+'</div>':
+          '<div style="font-family:var(--mono);font-size:.68rem;color:var(--tx3)">Sem anotações neste dia.</div>')+
+        '</div>';
+    });
 }
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
