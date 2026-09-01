@@ -710,9 +710,15 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="pg-head">
     <div>
       <div class="pg-title">📓 Diário Operacional</div>
-      <div class="pg-sub">Registre suas anotações, humor e tags por sessão</div>
+      <div class="pg-sub" id="diary-pg-sub">Registre suas anotações, humor e tags por sessão</div>
     </div>
     <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <div id="diary-person-wrap" style="display:none;align-items:center;gap:.4rem">
+        <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx3)">Ver:</span>
+        <select id="diary-person-sel" onchange="onDiaryPersonChange()" style="font-family:var(--mono);font-size:.68rem;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.3rem .6rem;color:var(--tx)">
+          <option value="">— Meu diário —</option>
+        </select>
+      </div>
       <div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)" id="diary-month-lbl"></div>
       <button class="pnl-nav-btn" onclick="shiftDiaryMonth(-1)">‹</button>
       <button class="pnl-nav-btn" onclick="shiftDiaryMonth(1)">›</button>
@@ -2030,10 +2036,7 @@ function renderMesa(){
     html+='<div class="tstat"><div class="tstat-lbl">Stops</div><div class="tstat-val cs">-'+fmtN(c.stops)+' pts</div></div>';
     html+='<div class="tstat"><div class="tstat-lbl">WR</div><div class="tstat-val ca">'+(c.wr!==null?c.wr+'%':'--')+'</div></div>';
     html+='</div></div>';
-    var hasLink=t.linkedUserId?true:false;
-    html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .85rem;border-top:1px solid var(--b1)">';
-    if(getRole()==='gestor'&&hasLink)html+='<button class="btn btn-sm" onclick="openGestorView(&quot;'+t.id+'&quot;)" style="font-size:.6rem;background:#0d1a2e;color:var(--acc);border:1px solid var(--acc)44">👁 Ver dados</button>';
-    else html+='<span></span>';
+    html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)">';
     html+='<button class="btn btn-g btn-sm" onclick="openEditTrader(&quot;'+t.id+'&quot;)">✏ Editar</button>';
     html+='</div>';
     html+='</div>';
@@ -4291,6 +4294,7 @@ function doLogout(){
   if(!confirm('Sair do sistema?'))return;
   supabase.auth.signOut().then(function(){
     clearUserLocalStorage();
+    diaryViewUserId=null;
     currentUser=null;
     currentProfile=null;
     showLoginPage();
@@ -4499,23 +4503,7 @@ function loadAllUserData(callback){
         });
         localStorage.setItem('dt_traders_demo',JSON.stringify(byAcct.demo));
         localStorage.setItem('dt_traders_real',JSON.stringify(byAcct.real));
-        // Load personal ops for each linked trader into localStorage
-        linkedUserIds.forEach(function(luid){
-          ['demo','real'].forEach(function(acct){
-            pending++;
-            supabase.from('operations').select('*').eq('user_id',luid).eq('account_type',acct)
-              .order('ts',{ascending:true})
-              .then(function(opsRes){
-                if(opsRes.data&&opsRes.data.length){
-                  var ops=opsRes.data.map(function(r){
-                    return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts),val:parseFloat(r.val||0),obs:r.obs||''};
-                  });
-                  localStorage.setItem('dt_linked_ops_'+acct+'_'+luid,JSON.stringify(ops));
-                }
-                done();
-              });
-          });
-        });
+        // Personal ops are accessed via Supabase in refreshGestorView only
       }
       done();
     });
@@ -4793,23 +4781,29 @@ var DAYS_PT   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 // ── LOAD / SAVE diary entries ─────────────────────────────────────────
 function loadDiaryCache(year, month, callback){
-  var key = 'dt_diary_'+curAccount+'_'+year+'_'+month;
-  var cached = localStorage.getItem(key);
-  if(cached){ try{ diaryCache = JSON.parse(cached); }catch(e){ diaryCache = {}; } if(callback) callback(); return; }
-  if(!supabase||!currentUser){ diaryCache = {}; if(callback) callback(); return; }
+  // Use diaryViewUserId if gestor is viewing another person's diary
+  var targetUserId = diaryViewUserId || (currentUser ? currentUser.id : null);
+  var key = 'dt_diary_'+(diaryViewUserId||curAccount)+'_'+year+'_'+month;
+  // Don't use cache when viewing another person (always fetch fresh)
+  if(!diaryViewUserId){
+    var cached = localStorage.getItem(key);
+    if(cached){ try{ diaryCache = JSON.parse(cached); }catch(e){ diaryCache = {}; } if(callback) callback(); return; }
+  }
+  if(!supabase||!targetUserId){ diaryCache = {}; if(callback) callback(); return; }
   var from = year+'-'+String(month+1).padStart(2,'0')+'-01';
   var lastDay=new Date(year,month+1,0).getDate();
   var to   = year+'-'+String(month+1).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
-  supabase.from('diary').select('*').eq('user_id',currentUser.id).gte('date',from).lte('date',to)
+  supabase.from('diary').select('*').eq('user_id',targetUserId).gte('date',from).lte('date',to)
     .then(function(res){
       diaryCache = {};
       if(res.data) res.data.forEach(function(r){ diaryCache[r.date] = {content:r.content||'', mood:r.mood||0, tags:r.tags||[]}; });
-      localStorage.setItem(key, JSON.stringify(diaryCache));
+      if(!diaryViewUserId) localStorage.setItem(key, JSON.stringify(diaryCache));
       if(callback) callback();
     });
 }
 
 function saveDiaryEntry(){
+  if(diaryViewUserId){ toast('Não é possível editar o diário de outro usuário','s'); return; }
   if(!diarySelDate){ toast('Selecione um dia primeiro','s'); return; }
   var notes = ($id('diary-notes')||{}).value||'';
   var entry = {content:notes, mood:diarySelMood, tags:diarySelTags.slice()};
@@ -4931,6 +4925,11 @@ function goToDiaryToday(){
 }
 
 function renderDiario(){
+  // Show/populate person selector for gestor
+  initDiaryPersonSelector();
+  // Hide editor controls when viewing another person
+  var saveBtn=document.querySelector('#diary-editor .btn.btn-p');
+  if(saveBtn)saveBtn.style.display=diaryViewUserId?'none':'';
   loadDiaryCache(diaryYear, diaryMonth, function(){
     renderDiaryCalendar();
     // Auto-select today if in current month
@@ -5461,6 +5460,67 @@ function loadGestorDiaryEntry(){
           '<div style="font-family:var(--mono);font-size:.68rem;color:var(--tx3)">Sem anotações neste dia.</div>')+
         '</div>';
     });
+}
+
+// ── DIARY PERSON SELECTOR (gestor only) ──────────────────────────────
+var diaryViewUserId = null;  // null = own diary, string = viewing another user
+
+function initDiaryPersonSelector(){
+  var wrap=$id('diary-person-wrap');
+  if(!wrap)return;
+  var role=getRole();
+  if(role!=='gestor'){wrap.style.display='none';return;}
+  wrap.style.display='flex';
+
+  // Populate with profiles
+  if(!supabase||!currentUser){return;}
+  var sel=$id('diary-person-sel');
+  if(!sel)return;
+  var loadProfiles=gestorProfiles.length>0?
+    Promise.resolve({data:gestorProfiles}):
+    supabase.from('profiles').select('*').order('name');
+
+  (gestorProfiles.length>0?
+    new Promise(function(res){res({data:gestorProfiles});}):
+    supabase.from('profiles').select('*').order('name')
+  ).then(function(res){
+    var profiles=res.data||[];
+    gestorProfiles=profiles;
+    var html='<option value="">— Meu diário —</option>';
+    profiles.forEach(function(p){
+      if(p.id===currentUser.id)return; // skip self
+      var roleLabel=p.role==='trader'?'Trader':p.role==='diretor'?'Diretor':'Gestor';
+      html+='<option value="'+p.id+'">'+p.name+' ('+roleLabel+')</option>';
+    });
+    sel.innerHTML=html;
+  });
+}
+
+function onDiaryPersonChange(){
+  var sel=$id('diary-person-sel');
+  if(!sel)return;
+  diaryViewUserId=sel.value||null;
+  var sub=$id('diary-pg-sub');
+  if(sub){
+    if(diaryViewUserId){
+      var opt=sel.options[sel.selectedIndex];
+      sub.textContent='Visualizando diário de: '+opt.text;
+      sub.style.color='var(--acc)';
+    } else {
+      sub.textContent='Registre suas anotações, humor e tags por sessão';
+      sub.style.color='';
+    }
+  }
+  // Reset to today and reload
+  diaryMonth=new Date().getMonth();
+  diaryYear=new Date().getFullYear();
+  diarySelDate=null;
+  diaryCache={};
+  loadDiaryCache(diaryYear,diaryMonth,function(){
+    renderDiaryCalendar();
+    var todayStr=new Date().toISOString().slice(0,10);
+    selectDiaryDay(todayStr);
+  });
 }
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
