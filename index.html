@@ -1962,6 +1962,22 @@ function deleteTrader(tid){
 var mesaPeriod='today',rankPeriod='all';
 function setMP(m){mesaPeriod=m;document.querySelectorAll('#mesa-ptabs .ptab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-mp')===m);});renderMesa();}
 function setRP(m){rankPeriod=m;document.querySelectorAll('#rank-ptabs .ptab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-rp')===m);});renderRanking();}
+function getMergedTOps(trader, mode){
+  // Load CSV-imported ops (trader_ops)
+  var csvOps=loadTOps(trader.id);
+  // Load personal ops if trader has linked user
+  var personalOps=[];
+  if(trader.linkedUserId){
+    var key='dt_linked_ops_'+curAccount+'_'+trader.linkedUserId;
+    try{var r=localStorage.getItem(key);if(r)personalOps=JSON.parse(r);}catch(e){}
+  }
+  // Merge: deduplicate by id, personal ops take priority
+  var merged=csvOps.slice();
+  var csvIds={};csvOps.forEach(function(o){csvIds[o.id]=true;});
+  personalOps.forEach(function(o){if(!csvIds[o.id])merged.push(o);});
+  merged.sort(function(a,b){return a.ts-b.ts;});
+  return filterByPeriod(merged,mode,'mp-from','mp-to');
+}
 function getTOpsFiltered(tid,mode){return filterByPeriod(loadTOps(tid),mode,'mp-from','mp-to');}
 // MESA RENDER
 function renderMesa(){
@@ -1997,8 +2013,8 @@ function renderMesa(){
     var tc2=t.color&&t.color.charAt&&t.color.charAt(0)==='#'?t.color:PALETTE[traders.indexOf(t)%PALETTE.length];
     html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc2+'22;color:'+tc2+';border:1px solid '+tc2+'44">'+t.tag+'</div><div><div class="tname">'+t.name+'</div><div class="tops">'+c.total+' ops &bull; '+tc.contratos+(tc.contratos===1?' ctto':' cttos')+'</div></div></div>';
     html+='<div style="display:flex;gap:.3rem"><button class="btn btn-g btn-sm" onclick="openImportFor(\''+t.id+'\')" title="Importar CSV">+ CSV</button><button class="btn btn-del" onclick="deleteTrader(\''+t.id+'\')" title="Remover">X</button></div></div>';
-    // R$ bruto — soma direta do campo val das operações (sem custos)
-    var tOps=getTOpsFiltered(t.id,mesaPeriod);
+    // R$ bruto — soma direta do campo val (CSV + ops pessoais do trader)
+    var tOps=getMergedTOps(t,mesaPeriod);
     var tValR=0,tGainR=0,tStopR=0;
     tOps.forEach(function(o){
       var v=o.val||0;
@@ -3357,7 +3373,7 @@ function renderMesaTotalBanner(){
 
   var traderLiq=0, traderGains=0, traderStops=0, traderOps=0;
   traders.forEach(function(t){
-    var ops=getTOpsFiltered(t.id,mesaPeriod);
+    var ops=getMergedTOps(t,mesaPeriod);
     ops.forEach(function(o){
       traderLiq+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);
       if(o.tipo==='GAIN') traderGains+=o.pts;
@@ -3388,7 +3404,7 @@ function renderMesaTotalBanner(){
   // Build individual trader breakdown
   var traderBreakdown='';
   traders.forEach(function(t){
-    var tOps=getTOpsFiltered(t.id,mesaPeriod);
+    var tOps=getMergedTOps(t,mesaPeriod);
     var tLiq=0;tOps.forEach(function(o){tLiq+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
     var tc=tLiq>0?'cg':tLiq<0?'cs':'cm';
     traderBreakdown+=
@@ -4468,19 +4484,38 @@ function loadAllUserData(callback){
       });
   });
 
-  // Load traders
+  // Load traders + linked user ops for gestor view
   pending++;
   supabase.from('traders').select('*').eq('owner_id',uid)
     .order('created_at',{ascending:true})
     .then(function(res){
       if(res.data&&res.data.length){
         var byAcct={demo:[],real:[]};
+        var linkedUserIds=[];
         res.data.forEach(function(r){
           var t={id:r.id,name:r.name,tag:r.tag,color:r.color,contratos:r.contratos,linkedUserId:r.user_id||''};
           (byAcct[r.account_type]||byAcct.demo).push(t);
+          if(r.user_id&&linkedUserIds.indexOf(r.user_id)<0)linkedUserIds.push(r.user_id);
         });
         localStorage.setItem('dt_traders_demo',JSON.stringify(byAcct.demo));
         localStorage.setItem('dt_traders_real',JSON.stringify(byAcct.real));
+        // Load personal ops for each linked trader into localStorage
+        linkedUserIds.forEach(function(luid){
+          ['demo','real'].forEach(function(acct){
+            pending++;
+            supabase.from('operations').select('*').eq('user_id',luid).eq('account_type',acct)
+              .order('ts',{ascending:true})
+              .then(function(opsRes){
+                if(opsRes.data&&opsRes.data.length){
+                  var ops=opsRes.data.map(function(r){
+                    return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts),val:parseFloat(r.val||0),obs:r.obs||''};
+                  });
+                  localStorage.setItem('dt_linked_ops_'+acct+'_'+luid,JSON.stringify(ops));
+                }
+                done();
+              });
+          });
+        });
       }
       done();
     });
