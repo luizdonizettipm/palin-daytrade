@@ -5198,6 +5198,7 @@ function fetchTraderOpsFromDB(userId, acct, from, to, callback){
   if(from)q=q.gte('date',from);
   if(to)q=q.lte('date',to);
   q.order('ts',{ascending:true}).then(function(res){
+    console.log('fetchTraderOpsFromDB: userId='+userId+' acct='+acct+' from='+from+' to='+to+' results='+(res.data?res.data.length:0)+' error='+(res.error?res.error.message:'none'));
     var ops=(res.data||[]).map(function(r){
       return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts),val:parseFloat(r.val||0),obs:r.obs||''};
     });
