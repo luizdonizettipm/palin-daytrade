@@ -1366,7 +1366,14 @@ function loadTraders(){
     if(!r)return[];
     var arr=JSON.parse(r);
     return arr.map(function(t,i){
-      return{id:t.id||uid(),name:t.name||'Trader '+(i+1),tag:t.tag||(t.name||'T').slice(0,2).toUpperCase(),color:(t.color&&t.color!=='undefined'&&t.color.charAt(0)==='#')?t.color:PALETTE[i%PALETTE.length]};
+      return{
+        id:t.id||uid(),
+        name:t.name||'Trader '+(i+1),
+        tag:t.tag||(t.name||'T').slice(0,2).toUpperCase(),
+        color:(t.color&&t.color!=='undefined'&&t.color.charAt(0)==='#')?t.color:PALETTE[i%PALETTE.length],
+        contratos:t.contratos||1,
+        linkedUserId:t.linkedUserId||''
+      };
     });
   }catch(e){return[];}
 }
