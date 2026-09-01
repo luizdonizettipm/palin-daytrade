@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profit Ultra — Day Trade Pro v3</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4030,7 +4030,10 @@ function saveConfigMetas(){
 // ═══════════════════════════════════════════════════════════════════
 var SUPA_URL = 'https://visuirdjbzlysirddvjd.supabase.co';
 var SUPA_KEY = 'sb_publishable_djocj3p3FoPoC5cSpRCu_Q_zlbLlNKi';
-var supabase = window.supabase ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+var _supaLib = window.supabase || window.Supabase || (window.supabaseJs && window.supabaseJs.createClient ? window.supabaseJs : null);
+var supabase = _supaLib ? _supaLib.createClient(SUPA_URL, SUPA_KEY) : null;
+if(!supabase) console.error('Supabase SDK nao carregou — verifique o CDN');
+else console.log('Supabase OK:', supabase);
 
 // Current user state
 var currentUser  = null;  // Supabase auth user
@@ -4134,6 +4137,7 @@ function onAuthSuccess(){
 
     showAppPage();
 
+    console.log('onAuthSuccess: user', currentUser.id, 'profile', currentProfile);
     // Load user data from Supabase into localStorage, then boot
     loadAllUserData(function(){
       seedDemo();loadCFG();onTipo();
@@ -4147,10 +4151,11 @@ function onAuthSuccess(){
 // ── SUPABASE BOOT — check session on page load ────────────────────────
 function initSupabase(){
   if(!supabase){
-    // No Supabase (offline mode) — just show app
+    console.warn('initSupabase: supabase nulo — modo offline');
     showAppPage();
     return;
   }
+  console.log('initSupabase: supabase carregado OK');
   // Show login page initially
   var lp=$id('login-page');
   var root=$id('root');
@@ -4404,8 +4409,10 @@ function clearUserLocalStorage(){
 
 // ── SUPABASE PUSH HELPERS (fire-and-forget, non-blocking) ─────────────
 function sbPushOps(ops, acct){
-  if(!supabase||!currentUser)return;
+  if(!supabase){console.warn('sbPushOps: supabase nulo');return;}
+  if(!currentUser){console.warn('sbPushOps: currentUser nulo');return;}
   var uid=currentUser.id;
+  console.log('sbPushOps: enviando',ops.length,'ops para',acct,'uid',uid);
   var rows=ops.map(function(o){
     return{id:o.id,user_id:uid,account_type:acct||curAccount,date:o.date,time:o.time,ts:o.ts,tipo:o.tipo,pts:o.pts,val:o.val||0,obs:o.obs||''};
   });
