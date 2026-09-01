@@ -4295,8 +4295,11 @@ function onAuthSuccess(){
     var nameEl=$id('user-name-sb');
     var roleEl=$id('user-role-sb');
     var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor'};
+    var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)'};
+    var role=currentProfile.role||'trader';
     if(nameEl)nameEl.textContent=currentProfile.name||currentUser.email;
-    if(roleEl)roleEl.textContent=roleLabels[currentProfile.role]||currentProfile.role;
+    if(roleEl){roleEl.textContent=roleLabels[role]||role;roleEl.style.color=roleColors[role]||'var(--tx3)';}
+    console.log('Profile loaded: name='+currentProfile.name+' role='+role);
 
     showAppPage();
 
