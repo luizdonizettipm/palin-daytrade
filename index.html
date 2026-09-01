@@ -295,6 +295,23 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 <div class="alov alov-stop" id="ov-stop" onclick="closeOv('stop')"><div class="alov-box"><div class="alov-icon">🛑</div><div class="alov-title">Stop Diário Atingido</div><div class="alov-sub" id="ov-stop-sub">Clique para fechar</div></div></div>
+<!-- RESET PASSWORD MODAL -->
+<div id="reset-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:#0008;align-items:center;justify-content:center">
+  <div style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:1.75rem;width:100%;max-width:360px;margin:1rem">
+    <div style="font-family:var(--mono);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--acc);margin-bottom:1.25rem;text-align:center">Definir Nova Senha</div>
+    <div class="fg" style="margin-bottom:.85rem">
+      <label>Nova senha</label>
+      <input type="password" id="reset-pass1" placeholder="Mínimo 6 caracteres" style="font-size:.9rem">
+    </div>
+    <div class="fg" style="margin-bottom:1.25rem">
+      <label>Confirmar senha</label>
+      <input type="password" id="reset-pass2" placeholder="Repita a senha" style="font-size:.9rem">
+    </div>
+    <div id="reset-error" style="display:none;font-family:var(--mono);font-size:.7rem;color:var(--stop);background:var(--stopdim);padding:.5rem .75rem;border-radius:var(--r);margin-bottom:.85rem;text-align:center"></div>
+    <button class="btn btn-p" onclick="doResetPassword()" style="width:100%;font-size:.85rem;padding:.7rem;justify-content:center" id="reset-btn">Salvar nova senha</button>
+  </div>
+</div>
+
 <!-- LOGIN PAGE -->
 <div id="login-page" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column">
   <div style="width:100%;max-width:380px;padding:1.5rem">
@@ -4144,13 +4161,22 @@ function initSupabase(){
 
   // Listen for auth changes (token refresh, logout from another tab)
   supabase.auth.onAuthStateChange(function(event, session){
+    if(event==='PASSWORD_RECOVERY'){
+      // User arrived via password reset link — show reset form
+      currentUser = session ? session.user : null;
+      showResetModal();
+      return;
+    }
     if(event==='SIGNED_OUT'||!session){
       currentUser=null;
       currentProfile=null;
       showLoginPage();
     } else if(event==='SIGNED_IN'&&session){
-      currentUser=session.user;
-      // onAuthSuccess already called by doLogin; skip if already loaded
+      // Only boot if not already loaded and not in password recovery
+      if(!currentProfile){
+        currentUser=session.user;
+        onAuthSuccess();
+      }
     }
   });
 }
@@ -4161,6 +4187,51 @@ document.addEventListener('keydown',function(e){
     doLogin();
   }
 });
+
+// ── RESET PASSWORD ────────────────────────────────────────────────────
+function showResetModal(){
+  var m=$id('reset-modal');
+  if(m){m.style.display='flex';}
+  var lp=$id('login-page');
+  var root=$id('root');
+  if(lp)lp.style.display='none';
+  if(root)root.style.display='none';
+  // Focus first field
+  setTimeout(function(){var p=$id('reset-pass1');if(p)p.focus();},100);
+}
+
+function doResetPassword(){
+  var p1=($id('reset-pass1')||{}).value||'';
+  var p2=($id('reset-pass2')||{}).value||'';
+  var errEl=$id('reset-error');
+  var btn=$id('reset-btn');
+
+  if(p1.length<6){
+    if(errEl){errEl.textContent='A senha precisa ter pelo menos 6 caracteres.';errEl.style.display='block';}
+    return;
+  }
+  if(p1!==p2){
+    if(errEl){errEl.textContent='As senhas não coincidem.';errEl.style.display='block';}
+    return;
+  }
+  if(errEl)errEl.style.display='none';
+  if(btn){btn.textContent='Salvando...';btn.disabled=true;}
+
+  supabase.auth.updateUser({password:p1}).then(function(res){
+    if(btn){btn.textContent='Salvar nova senha';btn.disabled=false;}
+    if(res.error){
+      if(errEl){errEl.textContent=res.error.message||'Erro ao salvar senha.';errEl.style.display='block';}
+      return;
+    }
+    // Password updated — close modal and enter app
+    var m=$id('reset-modal');
+    if(m)m.style.display='none';
+    var p=$id('reset-pass1');var p2=$id('reset-pass2');
+    if(p)p.value='';if(p2)p2.value='';
+    toast('Senha definida com sucesso!','g');
+    onAuthSuccess();
+  });
+}
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
 function compactR(v){
