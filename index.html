@@ -4460,7 +4460,7 @@ function loadAllUserData(callback){
       if(res.data&&res.data.length){
         var byAcct={demo:[],real:[]};
         res.data.forEach(function(r){
-          var t={id:r.id,name:r.name,tag:r.tag,color:r.color,contratos:r.contratos};
+          var t={id:r.id,name:r.name,tag:r.tag,color:r.color,contratos:r.contratos,linkedUserId:r.user_id||''};
           (byAcct[r.account_type]||byAcct.demo).push(t);
         });
         localStorage.setItem('dt_traders_demo',JSON.stringify(byAcct.demo));
@@ -5168,14 +5168,26 @@ function loadAllProfiles(callback){
 // ── POPULATE USER SELECTOR IN TRADER MODAL ───────────────────────────
 function populateUserSelector(selectedId){
   var sel=$id('at-user-id');if(!sel)return;
-  // Keep default option
-  var html='<option value="">— Sem vínculo (importação manual) —</option>';
-  gestorProfiles.forEach(function(p){
-    var selected=p.id===(selectedId||'')?'selected':'';
-    var roleLabel=p.role==='trader'?'Trader':p.role==='diretor'?'Diretor':'Gestor';
-    html+='<option value="'+p.id+'" '+selected+'>'+p.name+' ('+roleLabel+')</option>';
+  function buildOptions(profiles){
+    var html='<option value="">— Sem vínculo (importação manual) —</option>';
+    profiles.forEach(function(p){
+      var selected=p.id===(selectedId||'')?'selected':'';
+      var roleLabel=p.role==='trader'?'Trader':p.role==='diretor'?'Diretor':'Gestor';
+      html+='<option value="'+p.id+'" '+selected+'>'+p.name+' ('+roleLabel+')</option>';
+    });
+    sel.innerHTML=html;
+  }
+  // If profiles already cached, use them
+  if(gestorProfiles.length>0){
+    buildOptions(gestorProfiles);
+    return;
+  }
+  // Otherwise fetch fresh from Supabase
+  if(!supabase||!currentUser){buildOptions([]);return;}
+  supabase.from('profiles').select('*').order('name').then(function(res){
+    gestorProfiles=res.data||[];
+    buildOptions(gestorProfiles);
   });
-  sel.innerHTML=html;
 }
 
 // ── GESTOR VIEW PAGE ──────────────────────────────────────────────────
