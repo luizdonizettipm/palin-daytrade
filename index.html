@@ -4559,7 +4559,8 @@ function loadAllUserData(callback){
   pending++;
   var now2=new Date();
   var dFrom=now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-01';
-  var dTo  =now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-31';
+  var dLastDay=new Date(now2.getFullYear(),now2.getMonth()+1,0).getDate();
+  var dTo  =now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-'+String(dLastDay).padStart(2,'0');
   supabase.from('diary').select('*').eq('user_id',uid).gte('date',dFrom).lte('date',dTo)
     .then(function(res){
       if(res.data&&res.data.length){
@@ -4746,7 +4747,8 @@ function loadDiaryCache(year, month, callback){
   if(cached){ try{ diaryCache = JSON.parse(cached); }catch(e){ diaryCache = {}; } if(callback) callback(); return; }
   if(!supabase||!currentUser){ diaryCache = {}; if(callback) callback(); return; }
   var from = year+'-'+String(month+1).padStart(2,'0')+'-01';
-  var to   = year+'-'+String(month+1).padStart(2,'0')+'-31';
+  var lastDay=new Date(year,month+1,0).getDate();
+  var to   = year+'-'+String(month+1).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
   supabase.from('diary').select('*').eq('user_id',currentUser.id).gte('date',from).lte('date',to)
     .then(function(res){
       diaryCache = {};
