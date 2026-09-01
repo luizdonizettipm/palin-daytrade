@@ -478,6 +478,48 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <div class="kcard kp"><div class="klbl">IRRF Retido Dia</div><div class="kval" id="k-irrf-dia">R$ 0,00</div><div class="ksub">1% sobre gains</div></div>
   </div>
   <div class="sec">
+    <div style="display:flex;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+      <button class="btn btn-sm" onclick="toggleProfitPanel()" id="btn-import-profit"
+        style="background:#0d1a2e;color:var(--teal);border:1px solid var(--teal)44;font-size:.65rem">
+        📊 Importar CSV Profit
+      </button>
+      <div id="profit-import-badge" style="display:none;font-family:var(--mono);font-size:.62rem;color:var(--teal)"></div>
+    </div>
+    <!-- PROFIT IMPORT PANEL (collapsible) -->
+    <div id="profit-panel" style="display:none;background:var(--s2);border:1px solid var(--teal)44;border-radius:var(--r);padding:1rem;margin-bottom:1rem">
+      <div style="font-family:var(--mono);font-size:.6rem;color:var(--tx2);line-height:1.7;margin-bottom:.75rem">
+        Importa o relatório da <span style="color:var(--teal)">Profit Ultra</span> para a conta <span id="profit-panel-acct" style="font-weight:700">DEMO</span>.<br>
+        Colunas: <strong>Abertura</strong> · <strong>Res. Operação (%)</strong> · <strong>Res. Operação</strong> · <span style="color:var(--warn)">Mesma data substitui existentes.</span>
+      </div>
+      <div class="drop-zone" id="profit-drop-zone" style="padding:1rem;margin-bottom:.65rem">
+        <input type="file" accept=".csv,.txt" id="profit-csv-file" onchange="onProfitCsvSelected(this)">
+        <div class="drop-icon" style="font-size:1.5rem">📊</div>
+        <div class="drop-text" style="font-size:.75rem">Clique ou arraste o CSV do Profit aqui</div>
+        <div class="drop-sub">latin-1 · separador ponto-e-vírgula</div>
+      </div>
+      <div id="profit-csv-status" style="display:none;font-family:var(--mono);font-size:.7rem;padding:.5rem .75rem;border-radius:var(--r);margin-bottom:.6rem"></div>
+      <div id="profit-preview-wrap" style="display:none">
+        <div style="font-family:var(--mono);font-size:.6rem;color:var(--tx3);margin-bottom:.4rem">
+          Prévia — <span id="profit-preview-count">0</span> ops ·
+          <span class="cg" id="profit-gain-count">0</span> GAIN ·
+          <span class="cs" id="profit-stop-count">0</span> STOP ·
+          Datas: <span style="color:var(--warn)" id="profit-dates-count">0</span>
+        </div>
+        <div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);max-height:180px;overflow-y:auto;margin-bottom:.6rem">
+          <table style="width:100%">
+            <thead><tr><th style="padding:.35rem .6rem">Data</th><th>Hora</th><th>Tipo</th><th>Pontos</th><th>R$</th><th>Ativo</th></tr></thead>
+            <tbody id="profit-preview-tbody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)" id="profit-overwrite-msg"></div>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn btn-g btn-sm" onclick="resetProfitImport();toggleProfitPanel()">✕ Cancelar</button>
+            <button class="btn btn-t btn-sm" id="profit-confirm-btn" onclick="confirmProfitImport()">✓ Importar <span id="profit-confirm-acct">DEMO</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="sec-head"><div class="sec-title">Nova Operação</div></div>
     <div class="sec-body">
       <div class="frow">
@@ -922,88 +964,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
         </div>
       </div>
     </div>
-    <div class="sec" style="margin:0;grid-column:1/-1">
-      <div class="sec-head">
-        <div class="sec-title">Importar Relatório Profit Ultra <span id="imp-acct-badge" class="acct-badge demo">DEMO</span></div>
-      </div>
-      <div class="sec-body">
-        <p style="font-family:var(--mono);font-size:.72rem;color:var(--tx2);line-height:1.75;margin-bottom:1rem">
-          Importa o relatório operacional exportado da plataforma <span style="color:var(--teal)">Profit Ultra</span> direto para a conta ativa.<br>
-          Colunas usadas: <strong style="color:var(--tx)">Abertura</strong> (data/hora) · <strong style="color:var(--tx)">Res. Operação (%)</strong> (pontos) · <strong style="color:var(--tx)">Res. Operação</strong> (R$) · <strong style="color:var(--tx)">Ativo</strong> (obs.)<br>
-          Operações da mesma data serão <span style="color:var(--warn)">substituídas</span> pelas do arquivo importado.
-        </p>
-        <div class="drop-zone" id="profit-drop-zone" style="padding:1.5rem;margin-bottom:.85rem">
-          <input type="file" accept=".csv,.txt" id="profit-csv-file" onchange="onProfitCsvSelected(this)">
-          <div class="drop-icon" style="font-size:2rem">📊</div>
-          <div class="drop-text">Clique ou arraste o CSV do Profit Ultra aqui</div>
-          <div class="drop-sub">Separador ponto-e-vírgula · Encoding latin-1 · Cabeçalho: Ativo;Abertura;...</div>
-        </div>
-        <div id="profit-csv-status" style="display:none;font-family:var(--mono);font-size:.72rem;padding:.6rem .85rem;border-radius:var(--r);margin-bottom:.75rem"></div>
-        <div id="profit-preview-wrap" style="display:none">
-          <div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem">
-            Prévia — <span id="profit-preview-count">0</span> operações detectadas ·
-            <span class="cg" id="profit-gain-count">0</span> GAIN ·
-            <span class="cs" id="profit-stop-count">0</span> STOP ·
-            Datas afetadas: <span style="color:var(--warn)" id="profit-dates-count">0</span>
-          </div>
-          <div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);max-height:260px;overflow-y:auto;margin-bottom:.75rem">
-            <table style="width:100%">
-              <thead><tr>
-                <th style="padding:.45rem .75rem">Data</th>
-                <th>Hora</th><th>Tipo</th><th>Pontos</th><th>Valor R$</th><th>Ativo</th>
-              </tr></thead>
-              <tbody id="profit-preview-tbody"></tbody>
-            </table>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
-            <div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)" id="profit-overwrite-msg"></div>
-            <div style="display:flex;gap:.5rem">
-              <button class="btn btn-g btn-sm" onclick="resetProfitImport()">✕ Cancelar</button>
-              <button class="btn btn-t" id="profit-confirm-btn" onclick="confirmProfitImport()">✓ Importar para conta <span id="profit-confirm-acct">DEMO</span></button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
-    <div class="sec" style="margin:0;grid-column:1/-1">
-      <div class="sec-head">
-        <div class="sec-title">🎯 Configuração de Metas <span id="cfg-metas-badge" class="acct-badge demo" style="margin-left:.5rem">DEMO</span></div>
-      </div>
-      <div class="sec-body">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem">
-
-          <!-- META MENSAL POR TRADER -->
-          <div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:1rem">
-            <div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gain);margin-bottom:.75rem">Meta Mensal por Trader (R$)</div>
-            <div id="cfg-metas-mensais" style="display:flex;flex-direction:column;gap:.65rem">
-              <!-- populated by renderConfigMetas() -->
-            </div>
-          </div>
-
-          <!-- META TRIMESTRAL -->
-          <div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:1rem">
-            <div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:.75rem">Meta Trimestral Consolidada (R$)</div>
-            <div style="display:flex;flex-direction:column;gap:.65rem">
-              <div class="fg"><label>Nível Básico</label><input type="number" id="cfg-trim-basic" step="1000" min="0" placeholder="ex: 120000"></div>
-              <div class="fg"><label>Nível Intermediário</label><input type="number" id="cfg-trim-inter" step="1000" min="0" placeholder="ex: 180000"></div>
-              <div class="fg"><label>Nível Institucional</label><input type="number" id="cfg-trim-inst" step="1000" min="0" placeholder="ex: 250000"></div>
-            </div>
-          </div>
-
-          <!-- META ANUAL -->
-          <div style="background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:1rem">
-            <div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--purp);margin-bottom:.75rem">Meta Anual Consolidada (R$)</div>
-            <div style="display:flex;flex-direction:column;gap:.65rem">
-              <div class="fg"><label>Nível Básico</label><input type="number" id="cfg-anual-basic" step="5000" min="0" placeholder="ex: 480000"></div>
-              <div class="fg"><label>Nível Intermediário</label><input type="number" id="cfg-anual-inter" step="5000" min="0" placeholder="ex: 720000"></div>
-              <div class="fg"><label>Nível Institucional</label><input type="number" id="cfg-anual-inst" step="5000" min="0" placeholder="ex: 1000000"></div>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-top:1rem">
-          <button class="btn btn-p" onclick="saveConfigMetas()">✓ Salvar Metas</button>
-        </div>
-      </div>
     </div>
     <div class="sec" style="margin:0"><div class="sec-head"><div class="sec-title">Sobre v3</div></div>
       <div class="sec-body">
@@ -1351,6 +1312,7 @@ function setAccount(acct){
   updateAccountBadges();
   renderSaldo();
   if(curPage==='metas')renderMetas();
+  applyRoleUI();
   toast(acct==='real'?'Conta REAL ativada':'Conta DEMO ativada', acct==='real'?'g':'w');
 }
 function updateAccountBadges(){
@@ -1979,6 +1941,20 @@ function setRP(m){rankPeriod=m;document.querySelectorAll('#rank-ptabs .ptab').fo
 function getTOpsFiltered(tid,mode){return filterByPeriod(loadTOps(tid),mode,'mp-from','mp-to');}
 // MESA RENDER
 function renderMesa(){
+  var role=getRole();
+  // Diretor sees only their own section
+  var dirSec=$id('director-section');
+  var traderGrid=$id('trader-grid');
+  var totalBanner=$id('mesa-total-banner');
+  var ptabs=$id('mesa-ptabs');
+  if(role==='diretor'){
+    if(dirSec)dirSec.style.display='';
+    if(traderGrid)traderGrid.style.display='none';
+    if(totalBanner)totalBanner.style.display='none';
+    if(ptabs)ptabs.style.display='none';
+    renderDirector();renderDirectorChart();
+    return;
+  }
   var traders=loadTraders();setText('mesa-sub',traders.length+' trader(s) cadastrado(s) · Conta '+curAccount.toUpperCase());
   var grid=$id('trader-grid');if(!grid)return;
   var banner=$id('mesa-banner');
@@ -4307,7 +4283,7 @@ function onAuthSuccess(){
     loadAllUserData(function(){
       seedDemo();loadCFG();onTipo();
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
-      renderToday();
+      initRoleSystem();
       toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
     });
   });
@@ -5029,6 +5005,114 @@ function renderPnl(){
     b.classList.toggle('on',b.getAttribute('data-pa')===pnlAcct);
   });
   renderPnlCalendar();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ROLE-BASED PERMISSIONS
+// ═══════════════════════════════════════════════════════════════════
+
+// Pages visible per role
+var ROLE_PAGES = {
+  gestor:  ['today','history','analytics','stats','mesa','ranking','metas','diario','pnl','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl'],
+  diretor: ['mesa','diario','pnl']
+};
+
+// Nav items to show per role
+var ROLE_NAV = {
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','ranking','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl'],
+  diretor: ['mesa','diario','pnl']
+};
+
+function getRole(){
+  return currentProfile ? currentProfile.role : 'trader';
+}
+
+function canAccess(page){
+  var allowed = ROLE_PAGES[getRole()] || ROLE_PAGES.trader;
+  return allowed.indexOf(page) >= 0;
+}
+
+function applyRoleUI(){
+  var role = getRole();
+  var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','ranking','export','config'];
+
+  // Show/hide sidebar items
+  allNavIds.forEach(function(id){
+    var el = $id('n-'+id);
+    if(el) el.style.display = allowedNav.indexOf(id)>=0 ? '' : 'none';
+    var mel = $id('mn-'+id);
+    if(mel) mel.style.display = allowedNav.indexOf(id)>=0 ? '' : 'none';
+  });
+
+  // Show/hide import profit button (traders and gestor see it, diretor doesn't)
+  var importBtn = $id('btn-import-profit');
+  if(importBtn) importBtn.style.display = (role==='diretor') ? 'none' : '';
+
+  // Show/hide director section in mesa based on role
+  var dirSec = $id('director-section');
+  if(dirSec){
+    if(role==='diretor'){
+      // Diretor sees only their section, hide trader grid and total banner
+      var tg=$id('trader-grid');if(tg)tg.style.display='none';
+      var tb=$id('mesa-total-banner');if(tb)tb.style.display='none';
+      var ptabs=$id('mesa-ptabs');if(ptabs)ptabs.style.display='none';
+    } else if(role==='gestor'){
+      var tg=$id('trader-grid');if(tg)tg.style.display='';
+      var ptabs=$id('mesa-ptabs');if(ptabs)ptabs.style.display='';
+    }
+  }
+
+  // Role label colors
+  var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)'};
+  var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor'};
+  var roleEl=$id('user-role-sb');
+  if(roleEl){
+    roleEl.textContent=roleLabels[role]||role;
+    roleEl.style.color=roleColors[role]||'var(--tx3)';
+  }
+}
+
+// Wrap nav() to check permissions
+var _navOriginal = null;
+function navWithRole(page){
+  if(!canAccess(page)){
+    // Redirect to first allowed page
+    var allowed = ROLE_PAGES[getRole()]||ROLE_PAGES.trader;
+    toast('Sem acesso a esta página','s');
+    page = allowed[0]||'today';
+  }
+  _navOriginal(page);
+}
+
+function initRoleSystem(){
+  // Store original nav, wrap with permission check
+  _navOriginal = nav;
+  // Apply UI restrictions
+  applyRoleUI();
+  // Navigate to first allowed page for this role
+  var role=getRole();
+  var firstPage=role==='diretor'?'mesa':role==='trader'?'today':'today';
+  nav(firstPage);
+}
+
+// ── TOGGLE PROFIT PANEL ───────────────────────────────────────────────
+function toggleProfitPanel(){
+  var p=$id('profit-panel');
+  if(!p)return;
+  var showing=p.style.display!=='none';
+  p.style.display=showing?'none':'block';
+  if(!showing){
+    // Update account label
+    var lbl=$id('profit-panel-acct');
+    if(lbl)lbl.textContent=curAccount.toUpperCase();
+    var caf=$id('profit-confirm-acct');
+    if(caf)caf.textContent=curAccount.toUpperCase();
+  } else {
+    resetProfitImport();
+  }
 }
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
