@@ -1220,10 +1220,11 @@ function saveCFG(){
     emol_ordem:CFG.emol_ordem,contratos:CFG.contratos,corretagem:CFG.corretagem,
     sound:CFG.sound,inst:CFG.inst};
   localStorage.setItem('dt_cfg_'+curAccount,JSON.stringify(acct_data));
+  sbPushSettings(acct_data, curAccount);
 }
 // ── MY OPS (per account) ─────────────────────────────────────────────
 function loadOps(){try{var r=localStorage.getItem(acctKey('dt_ops'));return r?JSON.parse(r):[];}catch(e){return[];}}
-function saveOps(ops){localStorage.setItem(acctKey('dt_ops'),JSON.stringify(ops));}
+function saveOps(ops){localStorage.setItem(acctKey('dt_ops'),JSON.stringify(ops));sbPushOps(ops,curAccount);}
 function loadAlerts(){try{var r=localStorage.getItem(acctKey('dt_alerts'));return r?JSON.parse(r):{};}catch(e){return{};}}
 function saveAlerts(a){localStorage.setItem(acctKey('dt_alerts'),JSON.stringify(a));}
 // ── TRADERS (per account) ─────────────────────────────────────────────
@@ -1237,9 +1238,9 @@ function loadTraders(){
     });
   }catch(e){return[];}
 }
-function saveTraders(t){localStorage.setItem(acctKey('dt_traders'),JSON.stringify(t));}
+function saveTraders(t){localStorage.setItem(acctKey('dt_traders'),JSON.stringify(t));sbPushTraders(t,curAccount);}
 function loadTOps(tid){try{var r=localStorage.getItem(acctKey('dt_tops_')+tid);return r?JSON.parse(r):[];}catch(e){return[];}}
-function saveTOps(tid,ops){localStorage.setItem(acctKey('dt_tops_')+tid,JSON.stringify(ops));}
+function saveTOps(tid,ops){localStorage.setItem(acctKey('dt_tops_')+tid,JSON.stringify(ops));sbPushTOps(tid,ops,curAccount);}
 function delTData(tid){localStorage.removeItem(acctKey('dt_tops_')+tid);}
 // CALC
 function calcDay(ops){
@@ -1351,7 +1352,7 @@ function addOp(){
   toast(tipo+' +'+fmtN(pts)+' pts',tipo==='GAIN'?'g':'s');
   $id('f-pts').value='';$id('f-val').value='';$id('f-obs').value='';$id('f-pts').focus();
 }
-function delOp(id){if(!confirm('Remover?'))return;saveOps(loadOps().filter(function(o){return o.id!==id;}));renderToday();toast('Removido');}
+function delOp(id){if(!confirm('Remover?'))return;saveOps(loadOps().filter(function(o){return o.id!==id;}));sbDeleteOp(id);renderToday();toast('Removido');}
 function clearToday(){
   if(!confirm('Zerar hoje?'))return;
   var td=today();saveOps(loadOps().filter(function(o){return o.date!==td;}));
@@ -2399,7 +2400,7 @@ function loadAportes(){
   try{var r=localStorage.getItem(acctKey('dt_aportes'));return r?JSON.parse(r):[];}
   catch(e){return[];}
 }
-function saveAportes(a){localStorage.setItem(acctKey('dt_aportes'),JSON.stringify(a));}
+function saveAportes(a){localStorage.setItem(acctKey('dt_aportes'),JSON.stringify(a));sbPushDeposits(a,curAccount);}
 
 function calcSaldo(){
   var aportes=loadAportes();
@@ -2542,6 +2543,7 @@ function addAporte(){
 function delAporte(id){
   if(!confirm('Remover este aporte?'))return;
   saveAportes(loadAportes().filter(function(a){return a.id!==id;}));
+  sbDeleteDeposit(id);
   renderAporteList();renderSaldo();
   toast('Aporte removido');
 }
@@ -3083,7 +3085,7 @@ function loadDirOps(){
   try{var r=localStorage.getItem(acctKey('dt_director'));return r?JSON.parse(r):[];}
   catch(e){return[];}
 }
-function saveDirOps(ops){localStorage.setItem(acctKey('dt_director'),JSON.stringify(ops));}
+function saveDirOps(ops){localStorage.setItem(acctKey('dt_director'),JSON.stringify(ops));sbPushDirOps(ops,curAccount);}
 
 function dirFilterByPeriod(ops){
   return filterByPeriod(ops, mesaPeriod, 'mp-from', 'mp-to');
@@ -3607,7 +3609,7 @@ function saveMetasMensais(m){localStorage.setItem(acctKey('dt_metas_mensais'),JS
 function loadMetasHist(){
   try{var r=localStorage.getItem(acctKey('dt_metas_hist'));return r?JSON.parse(r):[];} catch(e){return[];}
 }
-function saveMetasHist(h){localStorage.setItem(acctKey('dt_metas_hist'),JSON.stringify(h));}
+function saveMetasHist(h){localStorage.setItem(acctKey('dt_metas_hist'),JSON.stringify(h));sbPushGoalsHist(h);}
 
 // ── HELPERS ───────────────────────────────────────────────────────────
 // Get current month range
@@ -4020,6 +4022,7 @@ function saveConfigMetas(){
   saveMetas(metas);
   toast('Metas salvas','g');
   if(curPage==='metas')renderMetas();
+  sbPushGoals(metas, mensais, curAccount);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -4082,6 +4085,7 @@ function doLogout(){
   if(!supabase)return;
   if(!confirm('Sair do sistema?'))return;
   supabase.auth.signOut().then(function(){
+    clearUserLocalStorage();
     currentUser=null;
     currentProfile=null;
     showLoginPage();
@@ -4130,10 +4134,13 @@ function onAuthSuccess(){
 
     showAppPage();
 
-    // Boot the app
-    seedDemo();loadCFG();onTipo();
-    initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
-    renderToday();
+    // Load user data from Supabase into localStorage, then boot
+    loadAllUserData(function(){
+      seedDemo();loadCFG();onTipo();
+      initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
+      renderToday();
+      toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
+    });
   });
 }
 
@@ -4230,6 +4237,292 @@ function doResetPassword(){
     if(p)p.value='';if(p2)p2.value='';
     toast('Senha definida com sucesso!','g');
     onAuthSuccess();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SUPABASE SYNC — Hybrid localStorage + Supabase
+// On login: pull all user data from Supabase into localStorage
+// On save: write localStorage immediately + push to Supabase async
+// On logout: clear localStorage
+// ═══════════════════════════════════════════════════════════════════
+
+// ── LOAD ALL USER DATA FROM SUPABASE ON LOGIN ─────────────────────────
+function loadAllUserData(callback){
+  if(!supabase||!currentUser){if(callback)callback();return;}
+  var uid=currentUser.id;
+  var accts=['demo','real'];
+  var pending=0;
+  function done(){pending--;if(pending<=0&&callback)callback();}
+
+  // Load operations for both accounts
+  accts.forEach(function(acct){
+    pending++;
+    supabase.from('operations').select('*')
+      .eq('user_id',uid).eq('account_type',acct)
+      .order('ts',{ascending:true})
+      .then(function(res){
+        if(res.data&&res.data.length){
+          var ops=res.data.map(function(r){
+            return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts),val:parseFloat(r.val),obs:r.obs||''};
+          });
+          localStorage.setItem('dt_ops_'+acct, JSON.stringify(ops));
+        }
+        done();
+      });
+  });
+
+  // Load traders
+  pending++;
+  supabase.from('traders').select('*').eq('owner_id',uid)
+    .order('created_at',{ascending:true})
+    .then(function(res){
+      if(res.data&&res.data.length){
+        var byAcct={demo:[],real:[]};
+        res.data.forEach(function(r){
+          var t={id:r.id,name:r.name,tag:r.tag,color:r.color,contratos:r.contratos};
+          (byAcct[r.account_type]||byAcct.demo).push(t);
+        });
+        localStorage.setItem('dt_traders_demo',JSON.stringify(byAcct.demo));
+        localStorage.setItem('dt_traders_real',JSON.stringify(byAcct.real));
+      }
+      done();
+    });
+
+  // Load trader ops for each trader
+  pending++;
+  supabase.from('trader_ops').select('*').eq('owner_id',uid)
+    .order('ts',{ascending:true})
+    .then(function(res){
+      if(res.data&&res.data.length){
+        var byTraderAcct={};
+        res.data.forEach(function(r){
+          var key=r.account_type+'_'+r.trader_id;
+          if(!byTraderAcct[key])byTraderAcct[key]=[];
+          byTraderAcct[key].push({id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts),val:parseFloat(r.val),obs:r.obs||''});
+        });
+        Object.keys(byTraderAcct).forEach(function(key){
+          var parts=key.split('_');
+          var acct=parts[0];var tid=parts.slice(1).join('_');
+          localStorage.setItem('dt_tops_'+acct+'_'+tid,JSON.stringify(byTraderAcct[key]));
+        });
+      }
+      done();
+    });
+
+  // Load director ops
+  accts.forEach(function(acct){
+    pending++;
+    supabase.from('director_ops').select('*').eq('owner_id',uid).eq('account_type',acct)
+      .order('ts',{ascending:true})
+      .then(function(res){
+        if(res.data&&res.data.length){
+          var ops=res.data.map(function(r){
+            return{id:r.id,date:r.date,time:r.time,ts:r.ts,papel:r.papel,qtd:r.qtd,liq:parseFloat(r.liq),pts:parseFloat(r.pts),tipo:r.tipo};
+          });
+          localStorage.setItem('dt_director_'+acct,JSON.stringify(ops));
+        }
+        done();
+      });
+  });
+
+  // Load deposits
+  accts.forEach(function(acct){
+    pending++;
+    supabase.from('deposits').select('*').eq('user_id',uid).eq('account_type',acct)
+      .order('date',{ascending:true})
+      .then(function(res){
+        if(res.data&&res.data.length){
+          var deps=res.data.map(function(r){
+            return{id:r.id,tipo:r.tipo,val:parseFloat(r.val),date:r.date,desc:r.description||''};
+          });
+          localStorage.setItem('dt_aportes_'+acct,JSON.stringify(deps));
+        }
+        done();
+      });
+  });
+
+  // Load settings
+  accts.forEach(function(acct){
+    pending++;
+    supabase.from('settings').select('*').eq('user_id',uid).eq('account_type',acct)
+      .then(function(res){
+        if(res.data&&res.data.length&&res.data[0].config_json){
+          var cfg=res.data[0].config_json;
+          if(acct==='demo'||acct==='real'){
+            localStorage.setItem('dt_cfg_'+acct,JSON.stringify(cfg));
+          }
+        }
+        done();
+      });
+  });
+
+  // Load goals
+  pending++;
+  supabase.from('goals').select('*').eq('owner_id',uid)
+    .then(function(res){
+      if(res.data&&res.data.length){
+        var g=res.data[0];
+        accts.forEach(function(acct){
+          if(g.account_type===acct){
+            if(g.trim_json||g.anual_json){
+              localStorage.setItem('dt_metas_'+acct,JSON.stringify({trim:g.trim_json||{},anual:g.anual_json||{}}));
+            }
+            if(g.mensais_json) localStorage.setItem('dt_metas_mensais_'+acct,JSON.stringify(g.mensais_json));
+          }
+        });
+      }
+      done();
+    });
+
+  // Load goals history
+  pending++;
+  supabase.from('goals_history').select('*').eq('owner_id',uid)
+    .order('fechado_em',{ascending:true})
+    .then(function(res){
+      if(res.data&&res.data.length){
+        var hist=res.data.map(function(r){
+          return{tipo:r.tipo,label:r.label,fechadoEm:r.fechado_em,total:parseFloat(r.total),nivelAtingido:r.nivel_atingido,contribuicoes:r.contribuicoes||[]};
+        });
+        localStorage.setItem('dt_metas_hist_demo',JSON.stringify(hist));
+        localStorage.setItem('dt_metas_hist_real',JSON.stringify(hist));
+      }
+      done();
+    });
+
+  // If nothing pending, call callback immediately
+  if(pending===0&&callback)callback();
+}
+
+// ── CLEAR ALL USER DATA FROM LOCALSTORAGE ON LOGOUT ───────────────────
+function clearUserLocalStorage(){
+  var keys=Object.keys(localStorage);
+  keys.forEach(function(k){
+    if(k.indexOf('dt_')===0)localStorage.removeItem(k);
+  });
+}
+
+// ── SUPABASE PUSH HELPERS (fire-and-forget, non-blocking) ─────────────
+function sbPushOps(ops, acct){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  var rows=ops.map(function(o){
+    return{id:o.id,user_id:uid,account_type:acct||curAccount,date:o.date,time:o.time,ts:o.ts,tipo:o.tipo,pts:o.pts,val:o.val||0,obs:o.obs||''};
+  });
+  // Upsert: insert or update existing
+  supabase.from('operations').upsert(rows,{onConflict:'id'}).then(function(res){
+    if(res.error)console.warn('sbPushOps error:',res.error.message);
+  });
+}
+
+function sbPushTraders(traders, acct){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  var rows=traders.map(function(t){
+    return{id:t.id,owner_id:uid,account_type:acct||curAccount,name:t.name,tag:t.tag,color:t.color,contratos:t.contratos||1};
+  });
+  supabase.from('traders').upsert(rows,{onConflict:'id'}).then(function(res){
+    if(res.error)console.warn('sbPushTraders error:',res.error.message);
+  });
+}
+
+function sbDeleteTrader(tid){
+  if(!supabase||!currentUser)return;
+  supabase.from('traders').delete().eq('id',tid).then(function(res){
+    if(res.error)console.warn('sbDeleteTrader error:',res.error.message);
+  });
+  supabase.from('trader_ops').delete().eq('trader_id',tid).then(function(){});
+}
+
+function sbPushTOps(tid, ops, acct){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  // Delete existing ops for this trader+account, then insert new
+  supabase.from('trader_ops').delete().eq('trader_id',tid).eq('owner_id',uid).eq('account_type',acct||curAccount)
+    .then(function(){
+      if(!ops||!ops.length)return;
+      var rows=ops.map(function(o){
+        return{id:o.id,trader_id:tid,owner_id:uid,account_type:acct||curAccount,date:o.date,time:o.time,ts:o.ts,tipo:o.tipo,pts:o.pts,val:o.val||0,obs:o.obs||''};
+      });
+      supabase.from('trader_ops').upsert(rows,{onConflict:'id'}).then(function(res){
+        if(res.error)console.warn('sbPushTOps error:',res.error.message);
+      });
+    });
+}
+
+function sbPushDirOps(ops, acct){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  supabase.from('director_ops').delete().eq('owner_id',uid).eq('account_type',acct||curAccount)
+    .then(function(){
+      if(!ops||!ops.length)return;
+      var rows=ops.map(function(o){
+        return{id:o.id,owner_id:uid,account_type:acct||curAccount,date:o.date,time:o.time,ts:o.ts,papel:o.papel,qtd:o.qtd,liq:o.liq,pts:o.pts,tipo:o.tipo};
+      });
+      supabase.from('director_ops').upsert(rows,{onConflict:'id'}).then(function(res){
+        if(res.error)console.warn('sbPushDirOps error:',res.error.message);
+      });
+    });
+}
+
+function sbPushDeposits(deps, acct){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  var rows=deps.map(function(d){
+    return{id:d.id,user_id:uid,account_type:acct||curAccount,tipo:d.tipo,val:d.val,date:d.date,description:d.desc||''};
+  });
+  supabase.from('deposits').upsert(rows,{onConflict:'id'}).then(function(res){
+    if(res.error)console.warn('sbPushDeposits error:',res.error.message);
+  });
+}
+
+function sbPushSettings(cfg, acct){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  supabase.from('settings').upsert(
+    {user_id:uid,account_type:acct||curAccount,config_json:cfg,updated_at:new Date().toISOString()},
+    {onConflict:'user_id,account_type'}
+  ).then(function(res){
+    if(res.error)console.warn('sbPushSettings error:',res.error.message);
+  });
+}
+
+function sbPushGoals(metas, mensais, acct){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  supabase.from('goals').upsert(
+    {owner_id:uid,account_type:acct||curAccount,trim_json:metas.trim||{},anual_json:metas.anual||{},mensais_json:mensais||{},updated_at:new Date().toISOString()},
+    {onConflict:'owner_id,account_type'}
+  ).then(function(res){
+    if(res.error)console.warn('sbPushGoals error:',res.error.message);
+  });
+}
+
+function sbPushGoalsHist(hist){
+  if(!supabase||!currentUser)return;
+  var uid=currentUser.id;
+  var last=hist[hist.length-1];
+  if(!last)return;
+  supabase.from('goals_history').insert({
+    owner_id:uid,account_type:curAccount,tipo:last.tipo,label:last.label,
+    fechado_em:last.fechadoEm,total:last.total,nivel_atingido:last.nivelAtingido,
+    contribuicoes:last.contribuicoes||[]
+  }).then(function(res){
+    if(res.error)console.warn('sbPushGoalsHist error:',res.error.message);
+  });
+}
+
+function sbDeleteOp(id){
+  if(!supabase||!currentUser)return;
+  supabase.from('operations').delete().eq('id',id).then(function(res){
+    if(res.error)console.warn('sbDeleteOp error:',res.error.message);
+  });
+}
+
+function sbDeleteDeposit(id){
+  if(!supabase||!currentUser)return;
+  supabase.from('deposits').delete().eq('id',id).then(function(res){
+    if(res.error)console.warn('sbDeleteDeposit error:',res.error.message);
   });
 }
 
