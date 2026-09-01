@@ -1325,6 +1325,7 @@ function setAccount(acct){
   updateAccountBadges();
   renderSaldo();
   if(curPage==='metas')renderMetas();
+  linkedOpsCache={};
   applyRoleUI();
   toast(acct==='real'?'Conta REAL ativada':'Conta DEMO ativada', acct==='real'?'g':'w');
 }
@@ -1966,7 +1967,7 @@ function deleteTrader(tid){
 }
 // MESA PERIOD
 var mesaPeriod='today',rankPeriod='all';
-function setMP(m){mesaPeriod=m;document.querySelectorAll('#mesa-ptabs .ptab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-mp')===m);});renderMesa();}
+function setMP(m){mesaPeriod=m;linkedOpsCache={};document.querySelectorAll('#mesa-ptabs .ptab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-mp')===m);});renderMesa();}
 function setRP(m){rankPeriod=m;document.querySelectorAll('#rank-ptabs .ptab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-rp')===m);});renderRanking();}
 function getMergedTOps(trader, mode){
   // Load CSV-imported ops (trader_ops)
@@ -5553,6 +5554,8 @@ function loadLinkedTraderOps(traders, acct, callback){
   function done(){pending--;if(pending<=0)callback();}
   linked.forEach(function(t){
     var uid=t.linkedUserId;
+    // Skip if this is the gestor's own userId (gestor's personal ops ≠ trader ops)
+    if(currentUser&&uid===currentUser.id){done();return;}
     supabase.from('operations').select('*')
       .eq('user_id',uid).eq('account_type',acct)
       .order('ts',{ascending:true})
