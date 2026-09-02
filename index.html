@@ -4601,10 +4601,12 @@ function loadAllUserData(callback){
       done();
     });
 
-  // Load director ops
+  // Load director ops (gestor loads all, others load own)
   accts.forEach(function(acct){
     pending++;
-    supabase.from('director_ops').select('*').eq('owner_id',uid).eq('account_type',acct)
+    var dirQuery=supabase.from('director_ops').select('*').eq('account_type',acct);
+    if(currentProfile&&currentProfile.role!=='gestor')dirQuery=dirQuery.eq('owner_id',uid);
+    dirQuery
       .order('ts',{ascending:true})
       .then(function(res){
         if(res.data&&res.data.length){
