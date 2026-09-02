@@ -2065,10 +2065,12 @@ function renderTraderCards(traders){
     
     html+='<div style="font-family:var(--mono);font-size:.82rem;font-weight:700;color:'+(tValR>0?'var(--gain)':tValR<0?'var(--stop)':'var(--tx2)')+';margin-top:.15rem;margin-bottom:.5rem">'+(tValR>=0?'+':'')+fmtR(tValR)+'</div>';
     
-    html+='</div></div>';
-    html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)">';
-    if(getRole()!=='diretor')html+='<button class="btn btn-g btn-sm" onclick="openEditTrader(&quot;'+t.id+'&quot;)">✏ Editar</button>';
     html+='</div>';
+    if(getRole()!=='diretor'){
+      html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)">';
+      html+='<button class="btn btn-g btn-sm" onclick="openEditTrader(&quot;'+t.id+'&quot;)">✏ Editar</button>';
+      html+='</div>';
+    }
     html+='</div>';
   });
   grid.innerHTML=html;
