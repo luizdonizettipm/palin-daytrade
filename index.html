@@ -420,7 +420,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-metas"     onclick="nav('metas')"><span class="sb-icon">🎯</span>Metas</div>
   <div class="sb-item"    id="n-diario"    onclick="nav('diario')"><span class="sb-icon">📓</span>Diário</div>
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
-  <div class="sb-item"    id="n-ranking"   onclick="nav('ranking')"><span class="sb-icon">🏆</span>Ranking</div>
+
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
@@ -4658,16 +4658,33 @@ function clearUserLocalStorage(){
 
 // ── SUPABASE PUSH HELPERS (fire-and-forget, non-blocking) ─────────────
 function sbPushOps(ops, acct){
-  if(!supabase){console.warn('sbPushOps: supabase nulo');return;}
-  if(!currentUser){console.warn('sbPushOps: currentUser nulo');return;}
+  if(!supabase||!currentUser)return;
   var uid=currentUser.id;
-  console.log('sbPushOps: enviando',ops.length,'ops para',acct,'uid',uid);
-  var rows=ops.map(function(o){
-    return{id:o.id,user_id:uid,account_type:acct||curAccount,date:o.date,time:o.time,ts:o.ts,tipo:o.tipo,pts:o.pts,val:o.val||0,obs:o.obs||''};
-  });
-  // Upsert: insert or update existing
-  supabase.from('operations').upsert(rows,{onConflict:'id'}).then(function(res){
-    if(res.error)console.warn('sbPushOps error:',res.error.message);
+  var account=acct||curAccount;
+  if(!ops||!ops.length){
+    // Nothing to push
+    return;
+  }
+  // Get unique dates in this batch
+  var dates={};
+  ops.forEach(function(o){dates[o.date]=true;});
+  var dateList=Object.keys(dates);
+  // Delete existing ops for these dates first (prevents duplicates on ID regeneration)
+  var q=supabase.from('operations').delete().eq('user_id',uid).eq('account_type',account);
+  // Build date filter
+  if(dateList.length===1){
+    q=q.eq('date',dateList[0]);
+  } else {
+    q=q.in('date',dateList);
+  }
+  q.then(function(){
+    var rows=ops.filter(function(o){return dates[o.date];}).map(function(o){
+      return{id:o.id,user_id:uid,account_type:account,date:o.date,time:o.time,ts:o.ts,tipo:o.tipo,pts:o.pts,val:o.val||0,obs:o.obs||''};
+    });
+    if(!rows.length)return;
+    supabase.from('operations').insert(rows).then(function(res){
+      if(res.error)console.warn('sbPushOps error:',res.error.message);
+    });
   });
 }
 
@@ -5117,14 +5134,14 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','ranking','metas','diario','pnl','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl'],
   diretor: ['mesa','diario','pnl']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','ranking','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl'],
   diretor: ['mesa','diario','pnl']
 };
@@ -5141,7 +5158,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','ranking','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
