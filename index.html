@@ -4552,7 +4552,10 @@ function loadAllUserData(callback){
 
   // Load traders + linked user ops for gestor view
   pending++;
-  supabase.from('traders').select('*').eq('owner_id',uid)
+  // Diretor loads all traders (not just own); gestor/trader load own
+  var tradersQuery=supabase.from('traders').select('*');
+  if(currentProfile&&currentProfile.role!=='diretor') tradersQuery=tradersQuery.eq('owner_id',uid);
+  tradersQuery
     .order('created_at',{ascending:true})
     .then(function(res){
       if(res.data&&res.data.length){
