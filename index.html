@@ -3538,16 +3538,21 @@ function parseTrydCsv(text, fname){
 
   // Header on line 1 (index 1), data starts line 2
   // Format: "Papel","Abertura","Fechamento","Tempo","Qtd",...,"Data","Custos","Res. Tot. Liq."...
-  var sep=',';
   function splitCsvLine(line){
-    var result=[],cur='',inQ=false;
-    for(var i=0;i<line.length;i++){
-      var c=line[i];
-      if(c==='"'){inQ=!inQ;}
-      else if(c===sep&&!inQ){result.push(cur.trim());cur='';}
-      else cur+=c;
-    }
-    result.push(cur.trim());
+    // TRYD format: "PAPEL,""FIELD2"",""FIELD3""..."
+    // Strip outer quotes first
+    line=line.trim();
+    if(line.charAt(0)==='"')line=line.slice(1);
+    if(line.slice(-2)===',"')line=line.slice(0,-2);
+    else if(line.charAt(line.length-1)==='"')line=line.slice(0,-1);
+    // First field ends at first comma (Papel has no quotes)
+    var comma=line.indexOf(',');
+    if(comma<0)return[line];
+    var result=[line.slice(0,comma)];
+    var rest=line.slice(comma+1);
+    // Remaining fields are separated by ","
+    var parts=rest.split('","');
+    for(var pi=0;pi<parts.length;pi++){result.push(parts[pi].replace(/^"+|"+$/g,''));}
     return result;
   }
 
