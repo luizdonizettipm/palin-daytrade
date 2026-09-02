@@ -2061,12 +2061,9 @@ function renderTraderCards(traders){
     });
     var valCls=tValR>0?'cg':tValR<0?'cs':'cm';
     html+='<div class="tcard-body">';
-    html+='<div class="tnet '+nc+'">'+(c.net>=0?'+':'')+fmtN(c.net)+'</div>';
+    
     html+='<div style="font-family:var(--mono);font-size:.82rem;font-weight:700;color:'+(tValR>0?'var(--gain)':tValR<0?'var(--stop)':'var(--tx2)')+';margin-top:.15rem;margin-bottom:.5rem">'+(tValR>=0?'+':'')+fmtR(tValR)+'</div>';
-    html+='<div class="tstats">';
-    html+='<div class="tstat"><div class="tstat-lbl">Gains</div><div class="tstat-val cg">+'+fmtN(c.gains)+'</div></div>';
-    html+='<div class="tstat"><div class="tstat-lbl">Stops</div><div class="tstat-val cs">-'+fmtN(c.stops)+'</div></div>';
-    html+='<div class="tstat"><div class="tstat-lbl">WR</div><div class="tstat-val ca">'+(c.wr!==null?c.wr+'%':'--')+'</div></div>';
+    
     html+='</div></div>';
     html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)">';
     if(getRole()!=='diretor')html+='<button class="btn btn-g btn-sm" onclick="openEditTrader(&quot;'+t.id+'&quot;)">✏ Editar</button>';
