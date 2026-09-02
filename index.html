@@ -2050,7 +2050,8 @@ function renderTraderCards(traders){
     html+='<div class="tcard">';
     var tc2=t.color&&t.color.charAt&&t.color.charAt(0)==='#'?t.color:PALETTE[traders.indexOf(t)%PALETTE.length];
     html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc2+'22;color:'+tc2+';border:1px solid '+tc2+'44">'+t.tag+'</div><div><div class="tname">'+t.name+'</div><div class="tops">'+c.total+' ops &bull; '+tc.contratos+(tc.contratos===1?' ctto':' cttos')+'</div></div></div>';
-    if(getRole()!=='diretor')html+='<div style="display:flex;gap:.3rem"><button class="btn btn-g btn-sm" onclick="openImportFor(\''+t.id+'\')" title="Importar CSV">+ CSV</button><button class="btn btn-del" onclick="deleteTrader(\''+t.id+'\')" title="Remover">X</button></div></div>';
+    if(getRole()!=='diretor')html+='<div style="display:flex;gap:.3rem"><button class="btn btn-g btn-sm" onclick="openImportFor(\''+t.id+'\')" title="Importar CSV">+ CSV</button><button class="btn btn-del" onclick="deleteTrader(\''+t.id+'\')" title="Remover">X</button></div>';
+    html+='</div>';
     // R$ bruto — soma direta do campo val das operações (sem custos)
     var tOps=getMesaOps(t,mesaPeriod);
     var tValR=0,tGainR=0,tStopR=0;
