@@ -2098,7 +2098,7 @@ function renderMesa(){
   var traders=loadTraders();setText('mesa-sub',traders.length+' trader(s) cadastrado(s) · Conta '+curAccount.toUpperCase());
   // Cards rendered by renderTraderCards()
   // For gestor: load personal ops from bank first, then render cards
-  if(getRole()==='gestor'){
+  if(getRole()==='gestor'||getRole()==='diretor'){
     var allTraders=loadTraders();
     loadLinkedTraderOps(allTraders,curAccount,function(){
       renderTraderCards(allTraders);
@@ -5608,14 +5608,14 @@ function onDiaryPersonChange(){
 var linkedOpsCache = {};
 
 function loadLinkedTraderOps(traders, acct, callback){
-  if(!supabase||!currentUser||getRole()!=='gestor'){callback();return;}
+  var role=getRole();if(!supabase||!currentUser||(role!=='gestor'&&role!=='diretor')){callback();return;}
   var linked=traders.filter(function(t){return t.linkedUserId;});
   if(!linked.length){callback();return;}
   var pending=linked.length;
   function done(){pending--;if(pending<=0)callback();}
   linked.forEach(function(t){
     var uid=t.linkedUserId;
-    // Skip if this is the gestor's own userId (gestor's personal ops ≠ trader ops)
+    // Skip if this is the current user's own userId
     if(currentUser&&uid===currentUser.id){done();return;}
     supabase.from('operations').select('*')
       .eq('user_id',uid).eq('account_type',acct)
