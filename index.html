@@ -2082,7 +2082,7 @@ function renderMesaChart(){
   }
   var allDates=new Set(),tData={};
   traders.forEach(function(t){
-    var ops=getTOpsFiltered(t.id,mesaPeriod),g=groupByDate(ops);
+    var ops=getMesaOps(t,mesaPeriod),g=groupByDate(ops);
     tData[t.id]=g;
     Object.keys(g).forEach(function(d){allDates.add(d);});
   });
@@ -2123,7 +2123,7 @@ function renderMesaTable(){
   var traders=loadTraders(),th=$id('mesa-t-head'),tb=$id('mesa-t-body');if(!th||!tb)return;
   if(!traders.length){th.innerHTML='<th>Data</th>';tb.innerHTML='<tr class="erow"><td>Sem traders</td></tr>';return;}
   var allDates=new Set(),tData={};
-  traders.forEach(function(t){var g=groupByDate(getTOpsFiltered(t.id,mesaPeriod));tData[t.id]=g;Object.keys(g).forEach(function(d){allDates.add(d);});});
+  traders.forEach(function(t){var g=groupByDate(getMesaOps(t,mesaPeriod));tData[t.id]=g;Object.keys(g).forEach(function(d){allDates.add(d);});});
   var dates=Array.from(allDates).sort(function(a,b){return b.localeCompare(a);}).slice(0,30);
   var hh='<th style="font-size:.58rem;letter-spacing:.1em;color:var(--tx3)">Data</th>';
   traders.forEach(function(t){hh+='<th style="color:'+t.color+';font-size:.58rem;letter-spacing:.1em">'+t.tag+'<br><span style="color:var(--tx3);font-weight:400;font-size:.52rem">'+t.name.split(' ')[0]+'</span></th>';});
