@@ -203,6 +203,31 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
+/* NEWS / ECONOMIC CALENDAR */
+.cal-filter-bar{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.cal-filter-btn{font-family:var(--mono);font-size:.62rem;padding:.3rem .75rem;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx3);cursor:pointer;transition:all .15s}
+.cal-filter-btn:hover{border-color:var(--acc);color:var(--tx)}
+.cal-filter-btn.on{border-color:var(--acc);background:#0d1a2e;color:var(--acc);font-weight:700}
+.cal-impact{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cal-impact.low{background:#4a5a72}
+.cal-impact.med{background:var(--warn)}
+.cal-impact.hi{background:var(--stop)}
+.cal-table{width:100%;border-collapse:collapse}
+.cal-table th{font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--b2);white-space:nowrap}
+.cal-table td{font-family:var(--mono);font-size:.72rem;padding:.65rem .75rem;border-bottom:1px solid var(--b1);vertical-align:middle}
+.cal-table tr:hover td{background:var(--s3)}
+.cal-table tr.today-event td{background:#0d1a2e22}
+.cal-table tr.hi-impact td:first-child{border-left:2px solid var(--stop)}
+.cal-table tr.med-impact td:first-child{border-left:2px solid var(--warn)}
+.cal-country-flag{font-size:.9rem;margin-right:.3rem}
+.cal-event-name{color:var(--tx);font-weight:600}
+.cal-val{font-weight:700;font-size:.75rem}
+.cal-val.green{color:var(--gain)}
+.cal-val.red{color:var(--stop)}
+.cal-loading{font-family:var(--mono);font-size:.8rem;color:var(--tx3);text-align:center;padding:3rem}
+.cal-error{font-family:var(--mono);font-size:.75rem;color:var(--stop);background:var(--stopdim);padding:.75rem 1rem;border-radius:var(--r)}
+.cal-day-header{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);padding:.5rem .75rem;background:var(--s3);border-bottom:1px solid var(--b2)}
+.cal-empty{font-family:var(--mono);font-size:.72rem;color:var(--tx3);text-align:center;padding:2rem}
 /* DIÁRIO */
 .diary-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:1rem}
 .diary-cal-hd{font-family:var(--mono);font-size:.55rem;color:var(--tx3);text-align:center;padding:.3rem 0;letter-spacing:.08em;text-transform:uppercase}
@@ -420,6 +445,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-metas"     onclick="nav('metas')"><span class="sb-icon">🎯</span>Metas</div>
   <div class="sb-item"    id="n-diario"    onclick="nav('diario')"><span class="sb-icon">📓</span>Diário</div>
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
+  <div class="sb-item"    id="n-news"      onclick="nav('news')"><span class="sb-icon">📰</span>Notícias</div>
 
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
@@ -702,6 +728,60 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sec">
     <div class="sec-head"><div class="sec-title tdot">Resultado Diário por Trader</div><button class="btn btn-g btn-sm" onclick="exportMesaCSV()">⬇ Relatório CSV</button></div>
     <div style="overflow-x:auto"><table><thead><tr id="mesa-t-head"></tr></thead><tbody id="mesa-t-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- NOTÍCIAS / CALENDÁRIO ECONÔMICO -->
+<div class="pg" id="page-news">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">📰 Calendário Econômico</div>
+      <div class="pg-sub">Eventos macroeconômicos com impacto no mercado · Fonte: Finnhub</div>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-g btn-sm" onclick="refreshCalendar()">↻ Atualizar</button>
+      <div id="cal-last-update" style="font-family:var(--mono);font-size:.6rem;color:var(--tx3)"></div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="cal-filter-bar">
+    <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx3);letter-spacing:.08em">PERÍODO:</span>
+    <button class="cal-filter-btn on" data-period="today" onclick="setCalPeriod('today')">Hoje</button>
+    <button class="cal-filter-btn" data-period="week" onclick="setCalPeriod('week')">Esta Semana</button>
+    <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx3);letter-spacing:.08em;margin-left:.5rem">IMPACTO:</span>
+    <button class="cal-filter-btn on" data-impact="all" onclick="setCalImpact('all')">Todos</button>
+    <button class="cal-filter-btn" data-impact="high" onclick="setCalImpact('high')">
+      <span style="display:inline-flex;align-items:center;gap:.3rem"><span class="cal-impact hi"></span>Alto</span>
+    </button>
+    <button class="cal-filter-btn" data-impact="medium" onclick="setCalImpact('medium')">
+      <span style="display:inline-flex;align-items:center;gap:.3rem"><span class="cal-impact med"></span>Médio</span>
+    </button>
+    <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx3);letter-spacing:.08em;margin-left:.5rem">PAÍSES:</span>
+    <button class="cal-filter-btn on" data-country="all" onclick="setCalCountry('all')">Todos</button>
+    <button class="cal-filter-btn" data-country="BR" onclick="setCalCountry('BR')">🇧🇷 Brasil</button>
+    <button class="cal-filter-btn" data-country="US" onclick="setCalCountry('US')">🇺🇸 EUA</button>
+    <button class="cal-filter-btn" data-country="EU" onclick="setCalCountry('EU')">🇪🇺 Europa</button>
+  </div>
+
+  <!-- Legenda -->
+  <div style="display:flex;gap:1.25rem;margin-bottom:1rem;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--tx3)">
+      <span class="cal-impact hi"></span>Alto impacto
+    </div>
+    <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--tx3)">
+      <span class="cal-impact med"></span>Médio impacto
+    </div>
+    <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--tx3)">
+      <span class="cal-impact low"></span>Baixo impacto
+    </div>
+    <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--gain)">↑ Melhor que esperado</div>
+    <div style="display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--stop)">↓ Pior que esperado</div>
+  </div>
+
+  <!-- Tabela -->
+  <div id="cal-wrap" style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);overflow:hidden">
+    <div class="cal-loading">Carregando calendário...</div>
   </div>
 </div>
 
@@ -1270,6 +1350,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-metas"     onclick="nav('metas');mnavSel(this)"><span class="mi">🎯</span>Metas</button>
   <button class="mnbtn"    id="mn-diario"    onclick="nav('diario');mnavSel(this)"><span class="mi">📓</span>Diário</button>
   <button class="mnbtn"    id="mn-pnl"       onclick="nav('pnl');mnavSel(this)"><span class="mi">📅</span>PNL</button>
+  <button class="mnbtn"    id="mn-news"      onclick="nav('news');mnavSel(this)"><span class="mi">📰</span>News</button>
   <button class="mnbtn"    id="mn-config"    onclick="nav('config');mnavSel(this)"><span class="mi">⚙️</span>Cfg</button>
 </div>
 <div id="toast"></div>
@@ -1436,6 +1517,7 @@ function nav(page){
   else if(page==='metas')renderMetas();
   else if(page==='diario')renderDiario();
   else if(page==='pnl')renderPnl();
+  else if(page==='news')renderNews();
   else if(page==='ranking')renderRanking();
   else if(page==='export')renderExpPreview();
   else if(page==='config')renderConfig();
@@ -5134,16 +5216,16 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','export','config'],
-  trader:  ['today','history','analytics','stats','diario','pnl'],
-  diretor: ['mesa','diario','pnl']
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl','news'],
+  diretor: ['mesa','diario','pnl','news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','export','config'],
-  trader:  ['today','history','analytics','stats','diario','pnl'],
-  diretor: ['mesa','diario','pnl']
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl','news'],
+  diretor: ['mesa','diario','pnl','news']
 };
 
 function getRole(){
@@ -5158,7 +5240,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
@@ -5613,6 +5695,247 @@ function getMesaOps(trader, mode){
   });
   merged.sort(function(a,b){return a.ts-b.ts;});
   return merged;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CALENDÁRIO ECONÔMICO — Finnhub API
+// ═══════════════════════════════════════════════════════════════════
+var FINNHUB_KEY = 'dac1cchr01qvvgl78d30dac1cchr01qvvgl78d3g';
+var calPeriod  = 'today';
+var calImpact  = 'all';
+var calCountry = 'all';
+var calCache   = null;
+var calCacheTs = 0;
+var CAL_CACHE_TTL = 5 * 60 * 1000; // 5 min cache
+
+// Country map: Finnhub uses country codes
+var CAL_COUNTRY_MAP = {
+  'BR': ['Brazil','BRA'],
+  'US': ['United States','USA'],
+  'EU': ['Euro Area','Germany','France','Italy','Spain','European Union']
+};
+
+// Flag emoji map
+var CAL_FLAGS = {
+  'United States':'🇺🇸','USA':'🇺🇸','US':'🇺🇸',
+  'Brazil':'🇧🇷','BRA':'🇧🇷','BR':'🇧🇷',
+  'Euro Area':'🇪🇺','European Union':'🇪🇺',
+  'Germany':'🇩🇪','France':'🇫🇷','Italy':'🇮🇹',
+  'Spain':'🇪🇸','United Kingdom':'🇬🇧','GBR':'🇬🇧',
+  'Japan':'🇯🇵','China':'🇨🇳','Canada':'🇨🇦',
+  'Australia':'🇦🇺','New Zealand':'🇳🇿','Switzerland':'🇨🇭'
+};
+
+function getFlag(country){
+  return CAL_FLAGS[country]||'🌐';
+}
+
+function getImpactClass(impact){
+  if(!impact)return'low';
+  var n=parseInt(impact)||0;
+  // Finnhub: impact is a string like "high","medium","low"
+  if(typeof impact==='string'){
+    if(impact.toLowerCase()==='high')return'hi';
+    if(impact.toLowerCase()==='medium')return'med';
+    return'low';
+  }
+  if(n>=3)return'hi';
+  if(n>=2)return'med';
+  return'low';
+}
+
+function getImpactLabel(impact){
+  var cls=getImpactClass(impact);
+  if(cls==='hi')return'high';
+  if(cls==='med')return'medium';
+  return'low';
+}
+
+function setCalPeriod(p){
+  calPeriod=p;
+  document.querySelectorAll('[data-period]').forEach(function(b){
+    b.classList.toggle('on',b.getAttribute('data-period')===p);
+  });
+  calCache=null; // force refresh when period changes
+  loadCalendar();
+}
+
+function setCalImpact(imp){
+  calImpact=imp;
+  document.querySelectorAll('[data-impact]').forEach(function(b){
+    b.classList.toggle('on',b.getAttribute('data-impact')===imp);
+  });
+  renderCalendar(calCache);
+}
+
+function setCalCountry(c){
+  calCountry=c;
+  document.querySelectorAll('[data-country]').forEach(function(b){
+    b.classList.toggle('on',b.getAttribute('data-country')===c);
+  });
+  renderCalendar(calCache);
+}
+
+function refreshCalendar(){
+  calCache=null;
+  loadCalendar();
+}
+
+function getCalDateRange(){
+  var now=new Date();
+  var from,to;
+  if(calPeriod==='today'){
+    from=now.toISOString().slice(0,10);
+    to=from;
+  } else {
+    // This week: Mon to Sun
+    var day=now.getDay()||7;
+    var mon=new Date(now);mon.setDate(now.getDate()-day+1);
+    var sun=new Date(now);sun.setDate(now.getDate()-day+7);
+    from=mon.toISOString().slice(0,10);
+    to=sun.toISOString().slice(0,10);
+  }
+  return{from:from,to:to};
+}
+
+function loadCalendar(){
+  var wrap=$id('cal-wrap');if(!wrap)return;
+  // Use cache if valid
+  var now=Date.now();
+  if(calCache&&(now-calCacheTs)<CAL_CACHE_TTL){
+    renderCalendar(calCache);return;
+  }
+  wrap.innerHTML='<div class="cal-loading">⏳ Carregando calendário econômico...</div>';
+  var range=getCalDateRange();
+  var url='https://finnhub.io/api/v1/calendar/economic?from='+range.from+'&to='+range.to+'&token='+FINNHUB_KEY;
+  fetch(url).then(function(r){return r.json();}).then(function(data){
+    var events=(data&&data.economicCalendar)||data||[];
+    calCache=Array.isArray(events)?events:[];
+    calCacheTs=Date.now();
+    var luEl=$id('cal-last-update');
+    if(luEl)luEl.textContent='Atualizado: '+new Date().toLocaleTimeString('pt-BR');
+    renderCalendar(calCache);
+  }).catch(function(err){
+    wrap.innerHTML='<div style="padding:1rem"><div class="cal-error">Erro ao carregar calendário: '+err.message+'</div></div>';
+  });
+}
+
+function renderCalendar(events){
+  var wrap=$id('cal-wrap');if(!wrap)return;
+  if(!events||!events.length){
+    wrap.innerHTML='<div class="cal-empty">Nenhum evento encontrado para o período selecionado.</div>';
+    return;
+  }
+
+  // Filter by impact
+  var filtered=events.filter(function(e){
+    if(calImpact!=='all'){
+      var imp=getImpactLabel(e.impact);
+      if(calImpact==='high'&&imp!=='high')return false;
+      if(calImpact==='medium'&&imp!=='medium')return false;
+    }
+    // Filter by country
+    if(calCountry!=='all'){
+      var allowed=CAL_COUNTRY_MAP[calCountry]||[];
+      var match=false;
+      allowed.forEach(function(c){if((e.country||'').toLowerCase()===c.toLowerCase())match=true;});
+      if(!match)return false;
+    }
+    return true;
+  });
+
+  if(!filtered.length){
+    wrap.innerHTML='<div class="cal-empty">Nenhum evento para os filtros selecionados.</div>';
+    return;
+  }
+
+  // Sort by date/time
+  filtered.sort(function(a,b){
+    var da=a.time||a.date||'';
+    var db=b.time||b.date||'';
+    return da.localeCompare(db);
+  });
+
+  // Group by date
+  var byDate={};
+  var today=new Date().toISOString().slice(0,10);
+  filtered.forEach(function(e){
+    var dt=(e.time||e.date||'').slice(0,10);
+    if(!byDate[dt])byDate[dt]=[];
+    byDate[dt].push(e);
+  });
+
+  var html='<table class="cal-table">';
+  html+='<thead><tr>';
+  html+='<th style="width:24px"></th>';
+  html+='<th>Horário</th>';
+  html+='<th>País</th>';
+  html+='<th>Evento</th>';
+  html+='<th style="text-align:right">Anterior</th>';
+  html+='<th style="text-align:right">Projeção</th>';
+  html+='<th style="text-align:right">Atual</th>';
+  html+='</tr></thead><tbody>';
+
+  Object.keys(byDate).sort().forEach(function(date){
+    var dateObj=new Date(date+'T12:00:00');
+    var dayNames=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    var months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    var isToday=date===today;
+    var dateLabel=dayNames[dateObj.getDay()]+', '+dateObj.getDate()+' de '+months[dateObj.getMonth()]+' '+dateObj.getFullYear();
+    if(isToday)dateLabel='📅 HOJE — '+dateLabel;
+
+    html+='<tr><td colspan="7" class="cal-day-header">'+dateLabel+'</td></tr>';
+
+    byDate[date].forEach(function(e){
+      var impCls=getImpactClass(e.impact);
+      var rowCls='';
+      if(impCls==='hi')rowCls='hi-impact';
+      else if(impCls==='med')rowCls='med-impact';
+
+      // Parse time
+      var timeStr='—';
+      if(e.time){
+        var t=new Date(e.time);
+        if(!isNaN(t))timeStr=t.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});
+      }
+
+      // Actual vs estimate coloring
+      var actualClass='';
+      if(e.actual&&e.estimate){
+        var act=parseFloat(String(e.actual).replace('%','').replace(',','.'));
+        var est=parseFloat(String(e.estimate).replace('%','').replace(',','.'));
+        if(!isNaN(act)&&!isNaN(est)){
+          actualClass=act>=est?'green':'red';
+        }
+      }
+      var actualArrow='';
+      if(e.actual&&e.estimate){
+        actualArrow=actualClass==='green'?' ↑':' ↓';
+      }
+
+      var flag=getFlag(e.country||'');
+      var prev=e.prev||e.previous||'—';
+      var est=e.estimate||e.forecast||'—';
+      var actual=e.actual||'—';
+
+      html+='<tr class="'+rowCls+(isToday?' today-event':'')+'">';
+      html+='<td style="padding:.65rem .5rem"><span class="cal-impact '+impCls+'"></span></td>';
+      html+='<td style="color:var(--tx3);white-space:nowrap">'+timeStr+'</td>';
+      html+='<td style="white-space:nowrap"><span class="cal-country-flag">'+flag+'</span><span style="color:var(--tx2);font-size:.65rem">'+(e.country||'')+'</span></td>';
+      html+='<td class="cal-event-name">'+(e.event||e.name||'—')+'</td>';
+      html+='<td style="text-align:right;color:var(--tx3)">'+prev+'</td>';
+      html+='<td style="text-align:right;color:var(--tx2)">'+est+'</td>';
+      html+='<td style="text-align:right"><span class="cal-val '+actualClass+'">'+actual+actualArrow+'</span></td>';
+      html+='</tr>';
+    });
+  });
+
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+function renderNews(){
+  loadCalendar();
 }
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
