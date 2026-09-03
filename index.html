@@ -4342,6 +4342,7 @@ else console.log('Supabase OK:', supabase);
 
 // Current user state
 var currentUser  = null;  // Supabase auth user
+var _authBooting = false;  // Prevents multiple onAuthSuccess calls
 var currentProfile = null; // {id, name, role, active}
 
 // ── LOGIN / LOGOUT ────────────────────────────────────────────────────
@@ -4453,6 +4454,7 @@ function onAuthSuccess(){
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
       // Load profiles for gestor view
       if(getRole()==='gestor') loadAllProfiles(function(){});
+      _authBooting=false;
       initRoleSystem();
       toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
     });
@@ -4493,10 +4495,12 @@ function initSupabase(){
     if(event==='SIGNED_OUT'||!session){
       currentUser=null;
       currentProfile=null;
+      _authBooting=false;
       showLoginPage();
     } else if(event==='SIGNED_IN'&&session){
-      // Only boot if not already loaded and not in password recovery
-      if(!currentProfile){
+      // Only boot once — use flag to prevent multiple calls
+      if(!_authBooting&&!currentProfile){
+        _authBooting=true;
         currentUser=session.user;
         onAuthSuccess();
       }
@@ -5919,7 +5923,7 @@ function openImgLightbox(url){
 }
 
 async function uploadDiaryImages(date){
-  if(!supabase||!currentUser||!diaryImgPending.length)return[];
+  if(!supabase||!currentUser||!diaryImgPending.length)return Promise.resolve([]);
   var urls=[];
   for(var i=0;i<diaryImgPending.length;i++){
     var p=diaryImgPending[i];
