@@ -4571,18 +4571,30 @@ function loadAllUserData(callback){
   var pending=0;
   function done(){pending--;if(pending<=0&&callback)callback();}
 
-  // Load operations for both accounts
+  // Load operations for both accounts — merge Supabase with localStorage
   accts.forEach(function(acct){
     pending++;
     supabase.from('operations').select('*')
       .eq('user_id',uid).eq('account_type',acct)
       .order('ts',{ascending:true})
       .then(function(res){
-        if(res.data&&res.data.length){
-          var ops=res.data.map(function(r){
+        if(res.data){
+          var sbOps=res.data.map(function(r){
             return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts),val:parseFloat(r.val),obs:r.obs||''};
           });
-          localStorage.setItem('dt_ops_'+acct, JSON.stringify(ops));
+          // Merge: keep local ops whose IDs are not in Supabase (not yet synced)
+          var localOps=[];
+          try{var lr=localStorage.getItem('dt_ops_'+acct);if(lr)localOps=JSON.parse(lr);}catch(e){}
+          var sbIds={};sbOps.forEach(function(o){sbIds[o.id]=true;});
+          var onlyLocal=localOps.filter(function(o){return !sbIds[o.id];});
+          var merged=sbOps.concat(onlyLocal);
+          merged.sort(function(a,b){return a.ts-b.ts;});
+          localStorage.setItem('dt_ops_'+acct, JSON.stringify(merged));
+          // Push any local-only ops to Supabase
+          if(onlyLocal.length){
+            console.log('Syncing',onlyLocal.length,'local-only ops to Supabase for acct',acct);
+            sbPushOps(merged, acct);
+          }
         }
         done();
       });
@@ -4907,10 +4919,7 @@ function loadDiaryCache(year, month, callback){
   var targetUserId = diaryViewUserId || (currentUser ? currentUser.id : null);
   var key = 'dt_diary_'+(diaryViewUserId||curAccount)+'_'+year+'_'+month;
   // Don't use cache when viewing another person (always fetch fresh)
-  if(!diaryViewUserId){
-    var cached = localStorage.getItem(key);
-    if(cached){ try{ diaryCache = JSON.parse(cached); }catch(e){ diaryCache = {}; } if(callback) callback(); return; }
-  }
+  // Always fetch from Supabase to ensure images are current
   if(!supabase||!targetUserId){ diaryCache = {}; if(callback) callback(); return; }
   var from = year+'-'+String(month+1).padStart(2,'0')+'-01';
   var lastDay=new Date(year,month+1,0).getDate();
