@@ -5697,8 +5697,7 @@ function loadLinkedTraderOps(traders, acct, callback){
   function done(){pending--;if(pending<=0)callback();}
   linked.forEach(function(t){
     var uid=t.linkedUserId;
-    // Skip if this is the current user's own userId
-    if(currentUser&&uid===currentUser.id){done();return;}
+    // Load ops for all linked traders including self
     supabase.from('operations').select('*')
       .eq('user_id',uid).eq('account_type',acct)
       .order('ts',{ascending:true})
