@@ -4407,8 +4407,8 @@ function onAuthSuccess(){
     // Update UI with user info
     var nameEl=$id('user-name-sb');
     var roleEl=$id('user-role-sb');
-    var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor'};
-    var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)'};
+    var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor',viewer:'Viewer'};
+    var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)',viewer:'var(--teal)'};
     var role=currentProfile.role||'trader';
     if(nameEl)nameEl.textContent=currentProfile.name||currentUser.email;
     if(roleEl){roleEl.textContent=roleLabels[role]||role;roleEl.style.color=roleColors[role]||'var(--tx3)';}
@@ -5193,14 +5193,16 @@ function renderPnl(){
 var ROLE_PAGES = {
   gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news']
+  diretor: ['mesa','metas','diario','pnl','news'],
+  viewer:  ['news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
   gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news']
+  diretor: ['mesa','metas','diario','pnl','news'],
+  viewer:  ['news']
 };
 
 function getRole(){
@@ -5244,8 +5246,8 @@ function applyRoleUI(){
   }
 
   // Role label colors
-  var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)'};
-  var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor'};
+  var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)',viewer:'var(--teal)'};
+  var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor',viewer:'Viewer'};
   var roleEl=$id('user-role-sb');
   if(roleEl){
     roleEl.textContent=roleLabels[role]||role;
@@ -5272,7 +5274,7 @@ function initRoleSystem(){
   applyRoleUI();
   // Navigate to first allowed page for this role
   var role=getRole();
-  var firstPage=role==='diretor'?'mesa':role==='trader'?'today':'today';
+  var firstPage=role==='diretor'?'mesa':role==='viewer'?'news':role==='trader'?'today':'today';
   nav(firstPage);
 }
 
