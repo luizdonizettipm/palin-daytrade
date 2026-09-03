@@ -373,8 +373,11 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 .aporte-item-info{font-family:var(--mono);font-size:.75rem}
 .aporte-item-val{font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--gain)}
 .aporte-item-date{font-family:var(--mono);font-size:.65rem;color:var(--tx3)}
+#acct-switch-m{display:none;position:fixed;top:.6rem;right:.6rem;z-index:900;gap:4px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:3px;box-shadow:0 2px 10px #0006}
+#acct-switch-m .acct-btn{padding:.4rem .55rem}
 @media(max-width:700px){
   #sb{display:none} #mnav{display:flex}
+  #acct-switch-m{display:flex}
   .kgrid{grid-template-columns:repeat(2,1fr)}
   .cgrid{grid-template-columns:1fr}
   .trader-grid{grid-template-columns:1fr}
@@ -1337,6 +1340,10 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 
+<div id="acct-switch-m">
+  <button class="acct-btn demo-on" id="btn-demo-m" onclick="setAccount('demo')">Demo</button>
+  <button class="acct-btn" id="btn-real-m" onclick="setAccount('real')">Real</button>
+</div>
 <div id="mnav">
   <button class="mnbtn on" id="mn-today"     onclick="nav('today');mnavSel(this)"><span class="mi">⚡</span>Hoje</button>
   <button class="mnbtn"    id="mn-history"   onclick="nav('history');mnavSel(this)"><span class="mi">📋</span>Hist</button>
@@ -1381,6 +1388,9 @@ function setAccount(acct){
   var bd=$id('btn-demo'),br=$id('btn-real');
   if(bd){bd.className='acct-btn'+(acct==='demo'?' demo-on':'');}
   if(br){br.className='acct-btn'+(acct==='real'?' real-on':'');}
+  var bdm=$id('btn-demo-m'),brm=$id('btn-real-m');
+  if(bdm){bdm.className='acct-btn'+(acct==='demo'?' demo-on':'');}
+  if(brm){brm.className='acct-btn'+(acct==='real'?' real-on':'');}
   // Reload account-specific config (meta, sloss, contratos etc)
   loadCFG();
   // Update KPI sub-labels with new account meta/sloss values
@@ -5995,6 +6005,9 @@ function updateAtEmolPreview(){
   var bd=$id('btn-demo'),br=$id('btn-real');
   if(bd){bd.className='acct-btn'+(curAccount==='demo'?' demo-on':'');}
   if(br){br.className='acct-btn'+(curAccount==='real'?' real-on':'');}
+  var bdm=$id('btn-demo-m'),brm=$id('btn-real-m');
+  if(bdm){bdm.className='acct-btn'+(curAccount==='demo'?' demo-on':'');}
+  if(brm){brm.className='acct-btn'+(curAccount==='real'?' real-on':'');}
 })();
 // Migrate legacy dt_cfg to per-account format (one-time)
 (function(){
