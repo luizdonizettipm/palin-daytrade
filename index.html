@@ -1408,6 +1408,7 @@ function setAccount(acct){
   else if(curPage==='mesa')renderMesa();
   else if(curPage==='ranking')renderRanking();
   else if(curPage==='export')renderExpPreview();
+  else if(curPage==='diario')renderDiario();
   updateAccountBadges();
   renderSaldo();
   if(curPage==='metas')renderMetas();
@@ -4988,8 +4989,16 @@ function saveDiaryEntry(){
 
 // ── GET DAY PNL ───────────────────────────────────────────────────────
 function getDayPnl(isoDate, acct){
-  var ops = (JSON.parse(localStorage.getItem('dt_ops_'+(acct||curAccount))||'[]'))
-    .filter(function(o){ return o.date===isoDate; });
+  var useAcct = acct||curAccount;
+  var ops;
+  if(diaryViewUserId){
+    // Viewing another trader's diary — use their personal ops, never the logged-in user's own
+    var cache = diaryViewOpsCache[diaryViewUserId];
+    ops = ((cache&&cache[useAcct])||[]).filter(function(o){ return o.date===isoDate; });
+  } else {
+    ops = (JSON.parse(localStorage.getItem('dt_ops_'+useAcct)||'[]'))
+      .filter(function(o){ return o.date===isoDate; });
+  }
   var r = 0;
   ops.forEach(function(o){ r += o.tipo==='GAIN'?(o.val||o.pts*CFG.ptval):-(o.val||o.pts*CFG.ptval); });
   return {val:r, ops:ops.length};
@@ -5099,14 +5108,18 @@ function renderDiario(){
   // Hide paste zone for viewers
   var pz=$id('diary-paste-zone');
   if(pz)pz.style.display=diaryViewUserId?'none':'';
-  loadDiaryCache(diaryYear, diaryMonth, function(){
-    renderDiaryCalendar();
-    // Auto-select today if in current month
-    var now=new Date();
-    if(diaryYear===now.getFullYear()&&diaryMonth===now.getMonth()){
-      selectDiaryDay(now.toISOString().slice(0,10));
-    }
-  });
+  function afterOpsInit(){
+    loadDiaryCache(diaryYear, diaryMonth, function(){
+      renderDiaryCalendar();
+      // Auto-select today if in current month
+      var now=new Date();
+      if(diaryYear===now.getFullYear()&&diaryMonth===now.getMonth()){
+        selectDiaryDay(now.toISOString().slice(0,10));
+      }
+    });
+  }
+  if(diaryViewUserId){ loadDiaryViewOps(diaryViewUserId, curAccount, afterOpsInit); }
+  else { afterOpsInit(); }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -5635,6 +5648,22 @@ function loadGestorDiaryEntry(){
 
 // ── DIARY PERSON SELECTOR (gestor only) ──────────────────────────────
 var diaryViewUserId = null;  // null = own diary, string = viewing another user
+var diaryViewOpsCache = {};  // diaryViewOpsCache[userId][account_type] = [ops] — personal ops of the trader being viewed
+
+function loadDiaryViewOps(userId, acct, callback){
+  if(!supabase||!userId){ if(callback) callback(); return; }
+  if(diaryViewOpsCache[userId] && diaryViewOpsCache[userId][acct]){ if(callback) callback(); return; }
+  supabase.from('operations').select('*')
+    .eq('user_id',userId).eq('account_type',acct)
+    .then(function(res){
+      if(!diaryViewOpsCache[userId]) diaryViewOpsCache[userId]={};
+      diaryViewOpsCache[userId][acct]=(res.data||[]).map(function(r){
+        return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,
+               pts:parseFloat(r.pts)||0,val:parseFloat(r.val||0),obs:r.obs||''};
+      });
+      if(callback) callback();
+    });
+}
 
 function initDiaryPersonSelector(){
   var wrap=$id('diary-person-wrap');
@@ -5687,11 +5716,15 @@ function onDiaryPersonChange(){
   diaryYear=new Date().getFullYear();
   diarySelDate=null;
   diaryCache={};
-  loadDiaryCache(diaryYear,diaryMonth,function(){
-    renderDiaryCalendar();
-    var todayStr=new Date().toISOString().slice(0,10);
-    selectDiaryDay(todayStr);
-  });
+  function afterOps(){
+    loadDiaryCache(diaryYear,diaryMonth,function(){
+      renderDiaryCalendar();
+      var todayStr=new Date().toISOString().slice(0,10);
+      selectDiaryDay(todayStr);
+    });
+  }
+  if(diaryViewUserId){ loadDiaryViewOps(diaryViewUserId, curAccount, afterOps); }
+  else { afterOps(); }
 }
 
 // ── LINKED TRADER OPS CACHE ──────────────────────────────────────────
