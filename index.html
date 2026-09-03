@@ -230,6 +230,20 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 .cal-day-header{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);padding:.5rem .75rem;background:var(--s3);border-bottom:1px solid var(--b2)}
 .cal-empty{font-family:var(--mono);font-size:.72rem;color:var(--tx3);text-align:center;padding:2rem}
 /* DIÁRIO */
+.diary-img-section{margin-top:.75rem}
+.diary-img-grid{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+.diary-img-thumb{position:relative;width:80px;height:80px;border-radius:6px;overflow:hidden;border:1px solid var(--b2);cursor:pointer;flex-shrink:0}
+.diary-img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.diary-img-thumb .img-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;font-size:.65rem;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s}
+.diary-img-thumb:hover .img-del{opacity:1}
+.diary-img-add{width:80px;height:80px;border-radius:6px;border:2px dashed var(--b2);background:var(--s3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s;flex-shrink:0;gap:3px}
+.diary-img-add:hover{border-color:var(--acc)}
+.diary-img-add-icon{font-size:1.2rem}
+.diary-img-add-lbl{font-family:var(--mono);font-size:.5rem;color:var(--tx3)}
+.diary-img-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.diary-img-lightbox img{max-width:92vw;max-height:88vh;border-radius:8px;object-fit:contain}
+.diary-img-lightbox-close{position:absolute;top:1rem;right:1.25rem;color:#fff;font-size:1.5rem;cursor:pointer;opacity:.7}
+.diary-img-lightbox-close:hover{opacity:1}
 .diary-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:1rem}
 .diary-cal-hd{font-family:var(--mono);font-size:.55rem;color:var(--tx3);text-align:center;padding:.3rem 0;letter-spacing:.08em;text-transform:uppercase}
 .diary-day{aspect-ratio:1;border-radius:6px;border:1px solid var(--b2);background:var(--s2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color .15s,background .15s;padding:4px;min-height:48px}
@@ -807,6 +821,20 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
         <!-- Notes -->
         <div style="font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.5rem">Anotações</div>
         <textarea class="diary-textarea" id="diary-notes" placeholder="Como foi a sessão? O que aprendeu? O que faria diferente?"></textarea>
+        <!-- Image upload -->
+        <div class="diary-img-section" id="diary-img-section">
+          <div style="font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.4rem">
+            Imagens da sessão <span style="color:var(--tx3);font-weight:400">(opcional · máx. 3)</span>
+          </div>
+          <div class="diary-img-grid" id="diary-img-grid">
+            <div class="diary-img-add" id="diary-img-add-btn" onclick="triggerImgUpload()" title="Adicionar imagem">
+              <div class="diary-img-add-icon">🖼</div>
+              <div class="diary-img-add-lbl">Adicionar</div>
+            </div>
+          </div>
+          <input type="file" id="diary-img-input" accept="image/*" multiple style="display:none" onchange="onDiaryImgSelected(this)">
+          <div id="diary-img-status" style="font-family:var(--mono);font-size:.6rem;color:var(--tx3);margin-top:.3rem"></div>
+        </div>
         <div style="display:flex;justify-content:flex-end;margin-top:.75rem;gap:.5rem">
           <button class="btn btn-g btn-sm" onclick="clearDiaryEditor()">Limpar</button>
           <button class="btn btn-p" onclick="saveDiaryEntry()">💾 Salvar entrada</button>
@@ -4888,7 +4916,7 @@ function loadDiaryCache(year, month, callback){
   supabase.from('diary').select('*').eq('user_id',targetUserId).gte('date',from).lte('date',to)
     .then(function(res){
       diaryCache = {};
-      if(res.data) res.data.forEach(function(r){ diaryCache[r.date] = {content:r.content||'', mood:r.mood||0, tags:r.tags||[]}; });
+      if(res.data) res.data.forEach(function(r){ diaryCache[r.date] = {content:r.content||'', mood:r.mood||0, tags:r.tags||[], images:r.images||[]}; });
       if(!diaryViewUserId) localStorage.setItem(key, JSON.stringify(diaryCache));
       if(callback) callback();
     });
@@ -4898,22 +4926,39 @@ function saveDiaryEntry(){
   if(diaryViewUserId){ toast('Não é possível editar o diário de outro usuário','s'); return; }
   if(!diarySelDate){ toast('Selecione um dia primeiro','s'); return; }
   var notes = ($id('diary-notes')||{}).value||'';
-  var entry = {content:notes, mood:diarySelMood, tags:diarySelTags.slice()};
-  diaryCache[diarySelDate] = entry;
-  var key = 'dt_diary_'+curAccount+'_'+diaryYear+'_'+diaryMonth;
-  localStorage.setItem(key, JSON.stringify(diaryCache));
-  // Push to Supabase
-  if(supabase&&currentUser){
-    supabase.from('diary').upsert({
-      user_id:currentUser.id, date:diarySelDate,
-      content:notes, mood:diarySelMood||null, tags:diarySelTags,
-      updated_at:new Date().toISOString()
-    },{onConflict:'user_id,date'}).then(function(res){
-      if(res.error) console.warn('diary save error:',res.error.message);
-    });
+  var saveBtn=document.querySelector('#diary-editor .btn.btn-p');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Salvando...';}
+
+  function doSave(imgUrls){
+    var allImgs=diaryImgUrls.concat(imgUrls);
+    var entry = {content:notes, mood:diarySelMood, tags:diarySelTags.slice(), images:allImgs};
+    diaryImgUrls=allImgs;
+    diaryImgPending=[];
+    renderDiaryImgGrid();
+    diaryCache[diarySelDate] = entry;
+    var key = 'dt_diary_'+curAccount+'_'+diaryYear+'_'+diaryMonth;
+    localStorage.setItem(key, JSON.stringify(diaryCache));
+    if(supabase&&currentUser){
+      supabase.from('diary').upsert({
+        user_id:currentUser.id, date:diarySelDate,
+        content:notes, mood:diarySelMood||null, tags:diarySelTags,
+        images:allImgs, updated_at:new Date().toISOString()
+      },{onConflict:'user_id,date'}).then(function(res){
+        if(res.error) console.warn('diary save error:',res.error.message);
+      });
+    }
+    renderDiaryCalendar();
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='💾 Salvar entrada';}
+    toast('Entrada salva','g');
   }
-  renderDiaryCalendar();
-  toast('Entrada salva','g');
+
+  if(diaryImgPending.length>0){
+    uploadDiaryImages(diarySelDate).then(function(newUrls){
+      doSave(newUrls);
+    });
+  } else {
+    doSave([]);
+  }
 }
 
 // ── GET DAY PNL ───────────────────────────────────────────────────────
@@ -4966,11 +5011,12 @@ function selectDiaryDay(isoDate){
     pnlEl.textContent = pnl.ops>0 ? (pnl.val>=0?'+':'')+fmtR(pnl.val)+' ('+pnl.ops+' ops)' : 'Sem operações';
     pnlEl.className = 'diary-editor-pnl '+(pnl.val>0?'cg':pnl.val<0?'cs':'cm');
   }
-  var entry = diaryCache[isoDate]||{content:'',mood:0,tags:[]};
+  var entry = diaryCache[isoDate]||{content:'',mood:0,tags:[],images:[]};
   var notesEl = $id('diary-notes');
   if(notesEl) notesEl.value = entry.content||'';
   diarySelMood = entry.mood||0;
   diarySelTags = (entry.tags||[]).slice();
+  loadDiaryImages(entry);
   // Update mood buttons
   document.querySelectorAll('.mood-btn').forEach(function(b){
     b.classList.toggle('selected', parseInt(b.getAttribute('data-mood'))===diarySelMood);
@@ -5001,6 +5047,7 @@ function clearDiaryEditor(){
   var n=$id('diary-notes'); if(n)n.value='';
   document.querySelectorAll('.mood-btn').forEach(function(b){b.classList.remove('selected');});
   document.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('selected');});
+  clearDiaryImages();
 }
 
 function shiftDiaryMonth(dir){
@@ -5722,6 +5769,153 @@ function renderNews(){
 }
 
 
+
+// ═══════════════════════════════════════════════════════════════════
+// DIARY IMAGE UPLOAD — Supabase Storage
+// ═══════════════════════════════════════════════════════════════════
+
+var diaryImgUrls = [];   // URLs of images for current diary entry (saved)
+var diaryImgPending = []; // {file, localUrl} not yet uploaded
+var DIARY_IMG_MAX = 3;
+
+function triggerImgUpload(){
+  if(diaryViewUserId){return;}  // gestor viewing others - no upload
+  var total=diaryImgUrls.length+diaryImgPending.length;
+  if(total>=DIARY_IMG_MAX){toast('Máximo de '+DIARY_IMG_MAX+' imagens por entrada','s');return;}
+  var inp=$id('diary-img-input');
+  if(inp)inp.click();
+}
+
+function onDiaryImgSelected(input){
+  var files=Array.from(input.files||[]);
+  if(!files.length)return;
+  var total=diaryImgUrls.length+diaryImgPending.length;
+  var remaining=DIARY_IMG_MAX-total;
+  files=files.slice(0,remaining);
+  files.forEach(function(file){
+    // Validate size (max 3MB per image)
+    if(file.size>3*1024*1024){
+      toast('Imagem muito grande (máx 3MB): '+file.name,'s');
+      return;
+    }
+    var localUrl=URL.createObjectURL(file);
+    diaryImgPending.push({file:file,localUrl:localUrl});
+  });
+  input.value='';
+  renderDiaryImgGrid();
+}
+
+function renderDiaryImgGrid(){
+  var grid=$id('diary-img-grid');
+  if(!grid)return;
+  var isViewer=diaryViewUserId?true:false;
+  var html='';
+
+  // Saved images (URLs from Supabase)
+  diaryImgUrls.forEach(function(url,i){
+    html+='<div class="diary-img-thumb" onclick="openImgLightbox(&quot;'+url+'&quot;)">';
+    html+='<img src="'+url+'" alt="Imagem '+(i+1)+'">';
+    if(!isViewer)html+='<div class="img-del" onclick="event.stopPropagation();removeSavedImg('+i+')">✕</div>';
+    html+='</div>';
+  });
+
+  // Pending images (local, not yet uploaded)
+  diaryImgPending.forEach(function(p,i){
+    html+='<div class="diary-img-thumb" onclick="openImgLightbox(&quot;'+p.localUrl+'&quot;)">';
+    html+='<img src="'+p.localUrl+'" alt="Pendente">';
+    if(!isViewer)html+='<div class="img-del" onclick="event.stopPropagation();removePendingImg('+i+')">✕</div>';
+    html+='</div>';
+  });
+
+  // Add button (if under max and not viewer)
+  var total=diaryImgUrls.length+diaryImgPending.length;
+  if(!isViewer&&total<DIARY_IMG_MAX){
+    html+='<div class="diary-img-add" id="diary-img-add-btn" onclick="triggerImgUpload()" title="Adicionar imagem">';
+    html+='<div class="diary-img-add-icon">🖼</div>';
+    html+='<div class="diary-img-add-lbl">Adicionar</div>';
+    html+='</div>';
+  }
+
+  grid.innerHTML=html;
+
+  // Status
+  var statusEl=$id('diary-img-status');
+  if(statusEl){
+    if(diaryImgPending.length>0){
+      statusEl.textContent=diaryImgPending.length+' imagem(ns) aguardando salvar';
+      statusEl.style.color='var(--warn)';
+    } else {
+      statusEl.textContent=total>0?(total+' imagem(ns) salva(s)'):'';
+      statusEl.style.color='var(--tx3)';
+    }
+  }
+}
+
+function removeSavedImg(idx){
+  if(!confirm('Remover esta imagem?'))return;
+  var url=diaryImgUrls[idx];
+  diaryImgUrls.splice(idx,1);
+  // Delete from Supabase Storage
+  if(supabase&&url){
+    // Extract path from URL
+    var path=url.split('/diary-images/')[1];
+    if(path){
+      supabase.storage.from('diary-images').remove([path]).then(function(){});
+    }
+  }
+  renderDiaryImgGrid();
+}
+
+function removePendingImg(idx){
+  URL.revokeObjectURL(diaryImgPending[idx].localUrl);
+  diaryImgPending.splice(idx,1);
+  renderDiaryImgGrid();
+}
+
+function openImgLightbox(url){
+  var lb=document.createElement('div');
+  lb.className='diary-img-lightbox';
+  lb.innerHTML='<span class="diary-img-lightbox-close" onclick="this.parentNode.remove()">✕</span>'+
+    '<img src="'+url+'" alt="Imagem da sessão">';
+  lb.onclick=function(e){if(e.target===lb)lb.remove();};
+  document.body.appendChild(lb);
+}
+
+async function uploadDiaryImages(date){
+  if(!supabase||!currentUser||!diaryImgPending.length)return[];
+  var urls=[];
+  for(var i=0;i<diaryImgPending.length;i++){
+    var p=diaryImgPending[i];
+    var ext=p.file.name.split('.').pop().toLowerCase()||'jpg';
+    var path=currentUser.id+'/'+date+'/'+Date.now()+'_'+i+'.'+ext;
+    var result=await supabase.storage.from('diary-images').upload(path,p.file,{
+      cacheControl:'3600',upsert:false,contentType:p.file.type
+    });
+    if(result.error){
+      console.warn('Image upload error:',result.error.message);
+    } else {
+      var pubUrl=supabase.storage.from('diary-images').getPublicUrl(path);
+      if(pubUrl&&pubUrl.data&&pubUrl.data.publicUrl){
+        urls.push(pubUrl.data.publicUrl);
+      }
+    }
+    URL.revokeObjectURL(p.localUrl);
+  }
+  return urls;
+}
+
+function loadDiaryImages(entry){
+  diaryImgUrls=(entry&&entry.images&&Array.isArray(entry.images))?entry.images.slice():[];
+  diaryImgPending=[];
+  renderDiaryImgGrid();
+}
+
+function clearDiaryImages(){
+  diaryImgPending.forEach(function(p){URL.revokeObjectURL(p.localUrl);});
+  diaryImgUrls=[];
+  diaryImgPending=[];
+  renderDiaryImgGrid();
+}
 
 // ── COMPACT CURRENCY FORMAT (for director cards) ────────────────────
 function compactR(v){
