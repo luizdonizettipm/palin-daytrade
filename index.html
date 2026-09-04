@@ -760,6 +760,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     </div>
     <div style="display:flex;gap:.5rem;align-items:center">
       <div id="cal-last-update" style="font-family:var(--mono);font-size:.6rem;color:var(--tx3)"></div>
+      <button class="btn btn-g btn-sm" id="cal-refresh-btn" onclick="refreshNews()">↻ Atualizar</button>
     </div>
   </div>
 
@@ -5803,6 +5804,7 @@ function renderNews(){
 
   // Investing.com economic calendar widget
   var widget=document.createElement('iframe');
+  widget.id='cal-iframe';
   widget.src='https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=32,5,72&importance=3,2&calType=week&timeZone=10&lang=12';
   widget.style.cssText='width:100%;height:650px;border:none;display:block';
   widget.setAttribute('frameborder','0');
@@ -5828,6 +5830,26 @@ function renderNews(){
 
   var luEl=$id('cal-last-update');
   if(luEl)luEl.textContent='Widget carregado';
+}
+
+function refreshNews(){
+  var iframe=$id('cal-iframe');
+  var btn=$id('cal-refresh-btn');
+  var luEl=$id('cal-last-update');
+  if(!iframe){
+    // Widget never loaded yet — force a fresh render
+    calWidgetLoaded=false;
+    renderNews();
+    return;
+  }
+  if(btn){btn.disabled=true;btn.innerHTML='↻ Atualizando...';}
+  // Reassigning src forces the iframe to reload without refreshing the whole page
+  iframe.src=iframe.src;
+  iframe.onload=function(){
+    if(btn){btn.disabled=false;btn.innerHTML='↻ Atualizar';}
+    if(luEl)luEl.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR');
+    toast('Calendário atualizado','g');
+  };
 }
 
 
