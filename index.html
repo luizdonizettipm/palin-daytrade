@@ -163,6 +163,13 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 .tname{font-family:var(--sans);font-size:.88rem;font-weight:600}
 .tops{font-family:var(--mono);font-size:.62rem;color:var(--tx3);margin-top:1px}
 .tcard-body{padding:.85rem 1.1rem}
+.tcard.bday-today{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn),0 0 18px #ffb02033}
+.tcard.bday-soon{border-color:var(--purp);box-shadow:0 0 0 1px var(--purp)55}
+.bday-banner{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.05em;padding:.4rem .85rem;text-align:center}
+.bday-banner.today{background:#ffb02022;color:var(--warn)}
+.bday-banner.soon{background:#a855f722;color:var(--purp)}
+.cad-row{display:flex;justify-content:space-between;gap:.5rem;font-family:var(--mono);font-size:.68rem;padding:.2rem 0;color:var(--tx2)}
+.cad-row .cad-lbl{color:var(--tx3)}
 .tnet{font-family:var(--mono);font-size:1.35rem;font-weight:700}
 .tstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-top:.65rem}
 .tstat{background:var(--s3);border-radius:var(--r);padding:.4rem .5rem;text-align:center}
@@ -665,6 +672,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-t btn-sm" onclick="openImportModal()">⬆ Importar CSV</button>
     </div>
   </div>
+  <div id="mesa-bday-alert" style="display:none;margin-bottom:1.1rem"></div>
   <div class="mesa-banner" id="mesa-banner">
     <div><div class="mb-lbl">Média da Mesa (período selecionado)</div><div class="mb-val" id="mb-val">-- pts</div></div>
     <div class="mb-stats" id="mb-stats"></div>
@@ -816,17 +824,8 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <button class="btn btn-p btn-sm" onclick="openAddCadastro()">+ Novo Cadastro</button>
   </div>
 
-  <div class="sec">
-    <div style="overflow-x:auto">
-      <table>
-        <thead><tr>
-          <th>Nome</th><th>Sexo</th><th>Telefone</th><th>Email pessoal</th><th>Telefone de emergência</th><th></th>
-        </tr></thead>
-        <tbody id="cad-tbody"></tbody>
-      </table>
-      <div id="cad-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum cadastro registrado ainda</div>
-    </div>
-  </div>
+  <div class="trader-grid" id="cad-grid"></div>
+  <div id="cad-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum cadastro registrado ainda</div>
 </div>
 
 
@@ -1266,7 +1265,10 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
         <div class="fg"><label>Telefone</label><input type="tel" id="cad-telefone" placeholder="(00) 00000-0000"></div>
         <div class="fg" style="flex:1"><label>Email pessoal</label><input type="email" id="cad-email" placeholder="nome@email.com"></div>
       </div>
-      <div class="fg"><label>Telefone de emergência</label><input type="tel" id="cad-tel-emerg" placeholder="(00) 00000-0000"></div>
+      <div class="frow">
+        <div class="fg"><label>Telefone de emergência</label><input type="tel" id="cad-tel-emerg" placeholder="(00) 00000-0000"></div>
+        <div class="fg"><label>Data de nascimento</label><input type="date" id="cad-nascimento"></div>
+      </div>
       <div class="fg"><label>Observação (opcional)</label><input type="text" id="cad-obs" placeholder="ex: contato é o cônjuge, mãe, etc." maxlength="120"></div>
     </div>
     <div class="mdl-foot">
@@ -2252,6 +2254,7 @@ function renderTraderCards(traders){
 
 function renderMesa(){
   var role=getRole();
+  renderMesaBdayAlert();
   // Diretor sees only their own section
   var dirSec=$id('director-section');
   var traderGrid=$id('trader-grid');
@@ -6214,32 +6217,60 @@ function loadCadastros(callback){
 
 function renderCadastros(){
   loadCadastros(function(){
-    renderCadastrosTable();
+    renderCadastrosGrid();
   });
 }
 
-function renderCadastrosTable(){
-  var tb=$id('cad-tbody'), empty=$id('cad-empty');
-  if(!tb) return;
+function daysUntilBirthday(isoDate){
+  if(!isoDate) return null;
+  var parts=isoDate.split('-');
+  var bMonth=parseInt(parts[1])-1, bDay=parseInt(parts[2]);
+  var now=new Date(); now.setHours(0,0,0,0);
+  var next=new Date(now.getFullYear(),bMonth,bDay);
+  if(next<now) next=new Date(now.getFullYear()+1,bMonth,bDay);
+  return Math.round((next-now)/(1000*60*60*24));
+}
+
+function fmtBirthdate(isoDate){
+  if(!isoDate) return null;
+  var parts=isoDate.split('-');
+  return parts[2]+'/'+parts[1]+'/'+parts[0];
+}
+
+function renderCadastrosGrid(){
+  var grid=$id('cad-grid'), empty=$id('cad-empty');
+  if(!grid) return;
   if(!cadastrosCache.length){
-    tb.innerHTML='';
+    grid.innerHTML='';
     if(empty) empty.style.display='';
     return;
   }
   if(empty) empty.style.display='none';
   var sexoLabel={M:'Masculino',F:'Feminino',Outro:'Outro'};
   var html='';
-  cadastrosCache.forEach(function(c){
-    html+='<tr onclick="openEditCadastro(&quot;'+c.id+'&quot;)" style="cursor:pointer">'+
-      '<td style="font-weight:700">'+esc(c.nome)+'</td>'+
-      '<td>'+(sexoLabel[c.sexo]||'--')+'</td>'+
-      '<td>'+esc(c.telefone||'--')+'</td>'+
-      '<td>'+esc(c.email_pessoal||'--')+'</td>'+
-      '<td>'+esc(c.telefone_emergencia||'--')+'</td>'+
-      '<td onclick="event.stopPropagation()"><button class="btn btn-g btn-sm" onclick="openEditCadastro(&quot;'+c.id+'&quot;)">Editar</button></td>'+
-      '</tr>';
+  cadastrosCache.forEach(function(c,idx){
+    var dias=daysUntilBirthday(c.data_nascimento);
+    var isToday = dias===0;
+    var isSoon = dias!==null && dias>0 && dias<=7;
+    var cardCls='tcard'+(isToday?' bday-today':isSoon?' bday-soon':'');
+    var tc=PALETTE[idx%PALETTE.length];
+    html+='<div class="'+cardCls+'">';
+    if(isToday){
+      html+='<div class="bday-banner today">🎉 Aniversário hoje!</div>';
+    } else if(isSoon){
+      html+='<div class="bday-banner soon">🎂 Aniversário em '+dias+(dias===1?' dia':' dias')+'</div>';
+    }
+    html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc+'22;color:'+tc+';border:1px solid '+tc+'44">'+esc((c.nome||'?').slice(0,2).toUpperCase())+'</div><div><div class="tname">'+esc(c.nome)+(isToday?' 🎈':'')+'</div><div class="tops">'+(sexoLabel[c.sexo]||'--')+'</div></div></div></div>';
+    html+='<div class="tcard-body">';
+    html+='<div class="cad-row"><span class="cad-lbl">Telefone</span><span>'+esc(c.telefone||'--')+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Email pessoal</span><span>'+esc(c.email_pessoal||'--')+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Tel. emergência</span><span>'+esc(c.telefone_emergencia||'--')+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Nascimento</span><span>'+(fmtBirthdate(c.data_nascimento)||'--')+'</span></div>';
+    html+='</div>';
+    html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)"><button class="btn btn-g btn-sm" onclick="openEditCadastro(&quot;'+c.id+'&quot;)">✏ Editar</button></div>';
+    html+='</div>';
   });
-  tb.innerHTML=html;
+  grid.innerHTML=html;
 }
 
 function openAddCadastro(){
@@ -6250,6 +6281,7 @@ function openAddCadastro(){
   $id('cad-telefone').value='';
   $id('cad-email').value='';
   $id('cad-tel-emerg').value='';
+  $id('cad-nascimento').value='';
   $id('cad-obs').value='';
   $id('cad-del-btn').style.display='none';
   $id('cad-modal').classList.add('show');
@@ -6266,6 +6298,7 @@ function openEditCadastro(id){
   $id('cad-telefone').value=c.telefone||'';
   $id('cad-email').value=c.email_pessoal||'';
   $id('cad-tel-emerg').value=c.telefone_emergencia||'';
+  $id('cad-nascimento').value=c.data_nascimento||'';
   $id('cad-obs').value=c.obs||'';
   $id('cad-del-btn').style.display='';
   $id('cad-modal').classList.add('show');
@@ -6287,6 +6320,7 @@ function saveCadastro(){
     telefone:$id('cad-telefone').value.trim(),
     email_pessoal:$id('cad-email').value.trim(),
     telefone_emergencia:$id('cad-tel-emerg').value.trim(),
+    data_nascimento:$id('cad-nascimento').value||null,
     obs:$id('cad-obs').value.trim(),
     updated_at:new Date().toISOString()
   };
@@ -6319,6 +6353,26 @@ function deleteCadastroFromModal(){
     closeCadastroModal();
     toast('Cadastro excluído','g');
     renderCadastros();
+  });
+}
+
+// ── AVISO DE ANIVERSARIANTES NA MESA (restrito: gestor/diretor) ───────
+function renderMesaBdayAlert(){
+  var box=$id('mesa-bday-alert'); if(!box) return;
+  var role=getRole();
+  if(role!=='gestor'&&role!=='diretor'){ box.style.display='none'; return; }
+  loadCadastros(function(){
+    var upcoming=cadastrosCache.map(function(c){
+      return {nome:c.nome, dias:daysUntilBirthday(c.data_nascimento)};
+    }).filter(function(x){ return x.dias!==null && x.dias<=7; })
+      .sort(function(a,b){ return a.dias-b.dias; });
+    if(!upcoming.length){ box.style.display='none'; box.innerHTML=''; return; }
+    var items=upcoming.map(function(x){
+      return x.dias===0 ? '🎉 <b>'+esc(x.nome)+'</b> — hoje!' : '🎂 <b>'+esc(x.nome)+'</b> — em '+x.dias+(x.dias===1?' dia':' dias');
+    }).join(' &nbsp;·&nbsp; ');
+    var hasToday=upcoming.some(function(x){return x.dias===0;});
+    box.innerHTML='<div class="bday-banner '+(hasToday?'today':'soon')+'" style="border-radius:var(--r);text-align:left;padding:.65rem .9rem">'+items+'</div>';
+    box.style.display='';
   });
 }
 
