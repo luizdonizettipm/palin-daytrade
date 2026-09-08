@@ -469,6 +469,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 
   <div class="sb-sec">Restrito</div>
   <div class="sb-item"    id="n-opcoes"    onclick="nav('opcoes')"><span class="sb-icon">📑</span>Opções</div>
+  <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')"><span class="sb-icon">🪪</span>Cadastros</div>
 
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
@@ -801,6 +802,29 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
         <tbody id="opt-tbody"></tbody>
       </table>
       <div id="opt-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhuma opção registrada neste filtro</div>
+    </div>
+  </div>
+</div>
+
+<!-- CADASTROS (restrito: Gestor e Diretor) -->
+<div class="pg" id="page-cadastros">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">🪪 Cadastros da Mesa</div>
+      <div class="pg-sub">Dados pessoais dos traders · acesso restrito</div>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="openAddCadastro()">+ Novo Cadastro</button>
+  </div>
+
+  <div class="sec">
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Nome</th><th>Sexo</th><th>Telefone</th><th>Email pessoal</th><th>Telefone de emergência</th><th></th>
+        </tr></thead>
+        <tbody id="cad-tbody"></tbody>
+      </table>
+      <div id="cad-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum cadastro registrado ainda</div>
     </div>
   </div>
 </div>
@@ -1229,6 +1253,30 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 
+<!-- CADASTRO MODAL -->
+<div class="mbk" id="cad-modal">
+  <div class="mdl">
+    <div class="mdl-title" id="cad-modal-title">Novo Cadastro</div>
+    <div style="display:flex;flex-direction:column;gap:.85rem">
+      <div class="frow">
+        <div class="fg" style="flex:1"><label>Nome completo</label><input type="text" id="cad-nome" placeholder="ex: João Silva" maxlength="60"></div>
+        <div class="fg" style="width:150px"><label>Sexo</label><select id="cad-sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Feminino</option><option value="Outro">Outro</option></select></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Telefone</label><input type="tel" id="cad-telefone" placeholder="(00) 00000-0000"></div>
+        <div class="fg" style="flex:1"><label>Email pessoal</label><input type="email" id="cad-email" placeholder="nome@email.com"></div>
+      </div>
+      <div class="fg"><label>Telefone de emergência</label><input type="tel" id="cad-tel-emerg" placeholder="(00) 00000-0000"></div>
+      <div class="fg"><label>Observação (opcional)</label><input type="text" id="cad-obs" placeholder="ex: contato é o cônjuge, mãe, etc." maxlength="120"></div>
+    </div>
+    <div class="mdl-foot">
+      <button class="btn btn-g" onclick="closeCadastroModal()">Cancelar</button>
+      <button class="btn btn-del" id="cad-del-btn" onclick="deleteCadastroFromModal()" style="display:none;margin-right:auto">🗑 Excluir</button>
+      <button class="btn btn-t" id="cad-save-btn" onclick="saveCadastro()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- APORTE MODAL -->
 <div class="mbk" id="aporte-modal">
   <div class="mdl" style="max-width:500px">
@@ -1428,6 +1476,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-pnl"       onclick="nav('pnl');mnavSel(this)"><span class="mi">📅</span>PNL</button>
   <button class="mnbtn"    id="mn-news"      onclick="nav('news');mnavSel(this)"><span class="mi">📰</span>News</button>
   <button class="mnbtn"    id="mn-opcoes"    onclick="nav('opcoes');mnavSel(this)"><span class="mi">📑</span>Opções</button>
+  <button class="mnbtn"    id="mn-cadastros" onclick="nav('cadastros');mnavSel(this)"><span class="mi">🪪</span>Cadastros</button>
   <button class="mnbtn"    id="mn-config"    onclick="nav('config');mnavSel(this)"><span class="mi">⚙️</span>Cfg</button>
 </div>
 <div id="toast"></div>
@@ -1603,6 +1652,7 @@ function nav(page){
   else if(page==='export')renderExpPreview();
   else if(page==='config')renderConfig();
   else if(page==='opcoes')renderOpcoes();
+  else if(page==='cadastros')renderCadastros();
 }
 function mnavSel(el){document.querySelectorAll('.mnbtn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
 // TODAY
@@ -5357,17 +5407,17 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','opcoes'],
+  diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
   viewer:  ['news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','opcoes'],
+  diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
   viewer:  ['news']
 };
 
@@ -5383,7 +5433,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
@@ -6142,6 +6192,133 @@ function toggleOptionStatus(id){
     if(res.error){ toast('Erro: '+res.error.message,'s'); return; }
     toast(newStatus==='encerrada'?'Posição encerrada':'Posição reaberta','g');
     renderOpcoes();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CADASTROS — dados pessoais dos traders (restrito: gestor/diretor)
+// ═══════════════════════════════════════════════════════════════════
+
+var cadastrosCache = [];
+var cadEditId = null;
+
+function loadCadastros(callback){
+  if(!supabase||!currentUser){ cadastrosCache=[]; if(callback)callback(); return; }
+  supabase.from('cadastros').select('*').order('nome',{ascending:true})
+    .then(function(res){
+      if(res.error){ console.warn('cadastros load error:',res.error.message); cadastrosCache=[]; }
+      else cadastrosCache=res.data||[];
+      if(callback)callback();
+    });
+}
+
+function renderCadastros(){
+  loadCadastros(function(){
+    renderCadastrosTable();
+  });
+}
+
+function renderCadastrosTable(){
+  var tb=$id('cad-tbody'), empty=$id('cad-empty');
+  if(!tb) return;
+  if(!cadastrosCache.length){
+    tb.innerHTML='';
+    if(empty) empty.style.display='';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  var sexoLabel={M:'Masculino',F:'Feminino',Outro:'Outro'};
+  var html='';
+  cadastrosCache.forEach(function(c){
+    html+='<tr onclick="openEditCadastro(&quot;'+c.id+'&quot;)" style="cursor:pointer">'+
+      '<td style="font-weight:700">'+esc(c.nome)+'</td>'+
+      '<td>'+(sexoLabel[c.sexo]||'--')+'</td>'+
+      '<td>'+esc(c.telefone||'--')+'</td>'+
+      '<td>'+esc(c.email_pessoal||'--')+'</td>'+
+      '<td>'+esc(c.telefone_emergencia||'--')+'</td>'+
+      '<td onclick="event.stopPropagation()"><button class="btn btn-g btn-sm" onclick="openEditCadastro(&quot;'+c.id+'&quot;)">Editar</button></td>'+
+      '</tr>';
+  });
+  tb.innerHTML=html;
+}
+
+function openAddCadastro(){
+  cadEditId=null;
+  setText('cad-modal-title','Novo Cadastro');
+  $id('cad-nome').value='';
+  $id('cad-sexo').value='';
+  $id('cad-telefone').value='';
+  $id('cad-email').value='';
+  $id('cad-tel-emerg').value='';
+  $id('cad-obs').value='';
+  $id('cad-del-btn').style.display='none';
+  $id('cad-modal').classList.add('show');
+}
+
+function openEditCadastro(id){
+  var c=null;
+  for(var i=0;i<cadastrosCache.length;i++){ if(cadastrosCache[i].id===id){c=cadastrosCache[i];break;} }
+  if(!c) return;
+  cadEditId=id;
+  setText('cad-modal-title','Editar Cadastro — '+c.nome);
+  $id('cad-nome').value=c.nome||'';
+  $id('cad-sexo').value=c.sexo||'';
+  $id('cad-telefone').value=c.telefone||'';
+  $id('cad-email').value=c.email_pessoal||'';
+  $id('cad-tel-emerg').value=c.telefone_emergencia||'';
+  $id('cad-obs').value=c.obs||'';
+  $id('cad-del-btn').style.display='';
+  $id('cad-modal').classList.add('show');
+}
+
+function closeCadastroModal(){
+  $id('cad-modal').classList.remove('show');
+  cadEditId=null;
+}
+
+function saveCadastro(){
+  var nome=$id('cad-nome').value.trim();
+  if(!nome){ toast('Informe o nome','s'); return; }
+  if(!supabase||!currentUser){ toast('Sem conexão com o banco','s'); return; }
+
+  var row={
+    nome:nome,
+    sexo:$id('cad-sexo').value,
+    telefone:$id('cad-telefone').value.trim(),
+    email_pessoal:$id('cad-email').value.trim(),
+    telefone_emergencia:$id('cad-tel-emerg').value.trim(),
+    obs:$id('cad-obs').value.trim(),
+    updated_at:new Date().toISOString()
+  };
+
+  var btn=$id('cad-save-btn'); if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+
+  var req;
+  if(cadEditId){
+    req=supabase.from('cadastros').update(row).eq('id',cadEditId);
+  } else {
+    row.id=uid();
+    row.created_by=currentUser.id;
+    row.created_at=new Date().toISOString();
+    req=supabase.from('cadastros').insert(row);
+  }
+  req.then(function(res){
+    if(btn){btn.disabled=false;btn.textContent='Salvar';}
+    if(res.error){ toast('Erro ao salvar: '+res.error.message,'s'); return; }
+    closeCadastroModal();
+    toast(cadEditId?'Cadastro atualizado':'Cadastro registrado','g');
+    renderCadastros();
+  });
+}
+
+function deleteCadastroFromModal(){
+  if(!cadEditId) return;
+  if(!confirm('Excluir este cadastro permanentemente?')) return;
+  supabase.from('cadastros').delete().eq('id',cadEditId).then(function(res){
+    if(res.error){ toast('Erro ao excluir: '+res.error.message,'s'); return; }
+    closeCadastroModal();
+    toast('Cadastro excluído','g');
+    renderCadastros();
   });
 }
 
