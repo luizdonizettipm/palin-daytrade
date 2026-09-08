@@ -467,6 +467,9 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
   <div class="sb-item"    id="n-news"      onclick="nav('news')"><span class="sb-icon">📰</span>Notícias</div>
 
+  <div class="sb-sec">Restrito</div>
+  <div class="sb-item"    id="n-opcoes"    onclick="nav('opcoes')"><span class="sb-icon">📑</span>Opções</div>
+
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
@@ -769,6 +772,39 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <div class="cal-loading">Carregando calendário...</div>
   </div>
 </div>
+
+<!-- OPÇÕES (restrito: Gestor e Diretor) -->
+<div class="pg" id="page-opcoes">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">📑 Controle de Opções</div>
+      <div class="pg-sub">Registro manual de opções em aberto · acesso restrito</div>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="openAddOption()">+ Nova Opção</button>
+  </div>
+
+  <div class="kgrid" id="opt-kpis" style="margin-bottom:1.25rem"></div>
+
+  <div class="ptabs" id="opt-ptabs">
+    <button class="ptab on" data-op="aberta"    onclick="setOptFilter('aberta')">Abertas</button>
+    <button class="ptab"    data-op="encerrada" onclick="setOptFilter('encerrada')">Encerradas</button>
+    <button class="ptab"    data-op="all"       onclick="setOptFilter('all')">Todas</button>
+  </div>
+
+  <div class="sec" style="margin-top:.85rem">
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Ticker</th><th>Tipo</th><th>Operação</th><th>Strike</th><th>Prêmio</th>
+          <th>Vencimento</th><th>Valor Atual</th><th>L/P</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="opt-tbody"></tbody>
+      </table>
+      <div id="opt-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhuma opção registrada neste filtro</div>
+    </div>
+  </div>
+</div>
+
 
 <!-- DIÁRIO -->
 <div class="pg" id="page-diario">
@@ -1156,6 +1192,43 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 
+<!-- OPÇÃO MODAL -->
+<div class="mbk" id="opt-modal">
+  <div class="mdl">
+    <div class="mdl-title" id="opt-modal-title">Nova Opção</div>
+    <div style="display:flex;flex-direction:column;gap:.85rem">
+      <div class="frow">
+        <div class="fg" style="flex:1"><label>Ticker</label><input type="text" id="opt-ticker" placeholder="ex: PETRK280" maxlength="12" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="fg" style="width:130px"><label>Tipo</label><select id="opt-tipo"><option value="CALL">CALL</option><option value="PUT">PUT</option></select></div>
+        <div class="fg" style="width:150px"><label>Operação</label><select id="opt-operacao"><option value="COMPRA">Compra</option><option value="VENDA">Venda</option></select></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Strike (R$)</label><input type="number" id="opt-strike" step="0.01" placeholder="0,00" oninput="autoCalcOptionPL()"></div>
+        <div class="fg"><label>Prêmio (R$)</label><input type="number" id="opt-premio" step="0.01" placeholder="0,00" oninput="autoCalcOptionPL()"></div>
+        <div class="fg"><label>Vencimento</label><input type="date" id="opt-vencimento"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Qtde (contratos)</label><input type="number" id="opt-qtd" step="1" min="1" value="1" oninput="autoCalcOptionPL()"></div>
+        <div class="fg"><label>Valor atual do papel (R$)</label><input type="number" id="opt-valor-atual" step="0.01" placeholder="0,00" oninput="autoCalcOptionPL()"></div>
+      </div>
+      <div class="frow">
+        <div class="fg" style="flex:1">
+          <label>Lucro / Prejuízo (R$)</label>
+          <input type="number" id="opt-lp" step="0.01" placeholder="0,00">
+          <div style="font-family:var(--mono);font-size:.57rem;color:var(--tx3);margin-top:.25rem">Estimado automaticamente pelo valor intrínseco · pode ser ajustado manualmente</div>
+        </div>
+        <div class="fg" style="width:160px"><label>Status</label><select id="opt-status"><option value="aberta">Aberta</option><option value="encerrada">Encerrada</option></select></div>
+      </div>
+      <div class="fg"><label>Observação (opcional)</label><input type="text" id="opt-obs" placeholder="ex: trava, hedge, especulativo..." maxlength="120"></div>
+    </div>
+    <div class="mdl-foot">
+      <button class="btn btn-g" onclick="closeOptionModal()">Cancelar</button>
+      <button class="btn btn-del" id="opt-del-btn" onclick="deleteOptionFromModal()" style="display:none;margin-right:auto">🗑 Excluir</button>
+      <button class="btn btn-t" id="opt-save-btn" onclick="saveOption()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- APORTE MODAL -->
 <div class="mbk" id="aporte-modal">
   <div class="mdl" style="max-width:500px">
@@ -1354,6 +1427,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-diario"    onclick="nav('diario');mnavSel(this)"><span class="mi">📓</span>Diário</button>
   <button class="mnbtn"    id="mn-pnl"       onclick="nav('pnl');mnavSel(this)"><span class="mi">📅</span>PNL</button>
   <button class="mnbtn"    id="mn-news"      onclick="nav('news');mnavSel(this)"><span class="mi">📰</span>News</button>
+  <button class="mnbtn"    id="mn-opcoes"    onclick="nav('opcoes');mnavSel(this)"><span class="mi">📑</span>Opções</button>
   <button class="mnbtn"    id="mn-config"    onclick="nav('config');mnavSel(this)"><span class="mi">⚙️</span>Cfg</button>
 </div>
 <div id="toast"></div>
@@ -1528,6 +1602,7 @@ function nav(page){
   else if(page==='ranking')renderRanking();
   else if(page==='export')renderExpPreview();
   else if(page==='config')renderConfig();
+  else if(page==='opcoes')renderOpcoes();
 }
 function mnavSel(el){document.querySelectorAll('.mnbtn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
 // TODAY
@@ -5282,17 +5357,17 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news'],
+  diretor: ['mesa','metas','diario','pnl','news','opcoes'],
   viewer:  ['news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news'],
+  diretor: ['mesa','metas','diario','pnl','news','opcoes'],
   viewer:  ['news']
 };
 
@@ -5308,7 +5383,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
@@ -5850,6 +5925,224 @@ function refreshNews(){
     if(luEl)luEl.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR');
     toast('Calendário atualizado','g');
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// OPÇÕES — controle e registro de opções em aberto (restrito: gestor/diretor)
+// ═══════════════════════════════════════════════════════════════════
+
+var optionsCache = [];
+var optEditId = null;
+var optFilter = 'aberta';
+
+function loadOptions(callback){
+  if(!supabase||!currentUser){ optionsCache=[]; if(callback)callback(); return; }
+  supabase.from('options').select('*').order('vencimento',{ascending:true})
+    .then(function(res){
+      if(res.error){ console.warn('options load error:',res.error.message); optionsCache=[]; }
+      else optionsCache=res.data||[];
+      if(callback)callback();
+    });
+}
+
+function setOptFilter(f){
+  optFilter=f;
+  document.querySelectorAll('#opt-ptabs .ptab').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-op')===f);
+  });
+  renderOptionsTable();
+}
+
+function renderOpcoes(){
+  loadOptions(function(){
+    renderOptionsKpis();
+    renderOptionsTable();
+  });
+}
+
+function renderOptionsKpis(){
+  var wrap=$id('opt-kpis'); if(!wrap) return;
+  var abertas=optionsCache.filter(function(o){return o.status==='aberta';});
+  var totalPremio=0, totalLP=0;
+  abertas.forEach(function(o){
+    totalPremio += (parseFloat(o.premio)||0)*(parseInt(o.quantidade)||1)*(o.operacao==='COMPRA'?1:-1);
+    totalLP += parseFloat(o.lucro_prejuizo)||0;
+  });
+  var in7=abertas.filter(function(o){
+    var d=new Date(o.vencimento+'T00:00:00'), now=new Date();
+    var diff=(d-now)/(1000*60*60*24);
+    return diff>=0 && diff<=7;
+  }).length;
+  var html='';
+  html+='<div class="kcard ka"><div class="klbl">Posições Abertas</div><div class="kval">'+abertas.length+'</div><div class="ksub">'+optionsCache.length+' no total</div></div>';
+  html+='<div class="kcard '+(totalLP>=0?'kg':'ks')+'"><div class="klbl">L/P Total (abertas)</div><div class="kval">'+(totalLP>=0?'+':'')+fmtR(totalLP)+'</div><div class="ksub">estimado</div></div>';
+  html+='<div class="kcard kt"><div class="klbl">Prêmio Líquido (abertas)</div><div class="kval">'+fmtR(totalPremio)+'</div><div class="ksub">compra soma / venda subtrai</div></div>';
+  html+='<div class="kcard '+(in7>0?'kw':'kt')+'"><div class="klbl">Vencendo em 7 dias</div><div class="kval">'+in7+'</div><div class="ksub">posições abertas</div></div>';
+  wrap.innerHTML=html;
+}
+
+function renderOptionsTable(){
+  var tb=$id('opt-tbody'), empty=$id('opt-empty');
+  if(!tb) return;
+  var list=optionsCache.filter(function(o){
+    if(optFilter==='all') return true;
+    return o.status===optFilter;
+  });
+  if(!list.length){
+    tb.innerHTML='';
+    if(empty) empty.style.display='';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  var html='';
+  list.forEach(function(o){
+    var lp=parseFloat(o.lucro_prejuizo)||0;
+    var vencDate=new Date(o.vencimento+'T00:00:00');
+    var vencStr=vencDate.toLocaleDateString('pt-BR');
+    var diffDays=Math.ceil((vencDate-new Date())/(1000*60*60*24));
+    var vencCls = o.status==='aberta' && diffDays<=3 ? 'color:var(--stop);font-weight:700' : o.status==='aberta' && diffDays<=7 ? 'color:var(--warn)' : '';
+    html+='<tr onclick="openEditOption(&quot;'+o.id+'&quot;)" style="cursor:pointer">'+
+      '<td style="font-weight:700">'+esc(o.ticker)+'</td>'+
+      '<td><span class="acct-badge '+(o.tipo==='CALL'?'demo':'real')+'">'+o.tipo+'</span></td>'+
+      '<td>'+(o.operacao==='COMPRA'?'Compra':'Venda')+'</td>'+
+      '<td>'+fmtR(o.strike)+'</td>'+
+      '<td>'+fmtR(o.premio)+(o.quantidade>1?' ×'+o.quantidade:'')+'</td>'+
+      '<td style="'+vencCls+'">'+vencStr+'</td>'+
+      '<td>'+(o.valor_atual!=null?fmtR(o.valor_atual):'--')+'</td>'+
+      '<td style="color:'+(lp>=0?'var(--gain)':'var(--stop)')+';font-weight:700">'+(lp>=0?'+':'')+fmtR(lp)+'</td>'+
+      '<td><span class="acct-badge '+(o.status==='aberta'?'real':'demo')+'">'+(o.status==='aberta'?'Aberta':'Encerrada')+'</span></td>'+
+      '<td onclick="event.stopPropagation()"><button class="btn btn-g btn-sm" onclick="toggleOptionStatus(&quot;'+o.id+'&quot;)">'+(o.status==='aberta'?'Encerrar':'Reabrir')+'</button></td>'+
+      '</tr>';
+  });
+  tb.innerHTML=html;
+}
+
+function esc(s){ return (s||'').toString().replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function autoCalcOptionPL(){
+  var strike=parseFloat($id('opt-strike').value)||0;
+  var premio=parseFloat($id('opt-premio').value)||0;
+  var valorAtual=parseFloat($id('opt-valor-atual').value);
+  var qtd=parseInt($id('opt-qtd').value)||1;
+  if(isNaN(valorAtual)) return; // don't overwrite until user informs current price
+  var tipo=$id('opt-tipo').value;
+  var operacao=$id('opt-operacao').value;
+  var intrinseco = tipo==='CALL' ? Math.max(valorAtual-strike,0) : Math.max(strike-valorAtual,0);
+  var lp = operacao==='COMPRA' ? (intrinseco-premio) : (premio-intrinseco);
+  lp = lp*qtd;
+  $id('opt-lp').value = lp.toFixed(2);
+}
+
+function openAddOption(){
+  optEditId=null;
+  setText('opt-modal-title','Nova Opção');
+  $id('opt-ticker').value='';
+  $id('opt-tipo').value='CALL';
+  $id('opt-operacao').value='COMPRA';
+  $id('opt-strike').value='';
+  $id('opt-premio').value='';
+  $id('opt-vencimento').value='';
+  $id('opt-qtd').value='1';
+  $id('opt-valor-atual').value='';
+  $id('opt-lp').value='';
+  $id('opt-status').value='aberta';
+  $id('opt-obs').value='';
+  $id('opt-del-btn').style.display='none';
+  $id('opt-modal').classList.add('show');
+}
+
+function openEditOption(id){
+  var o=null;
+  for(var i=0;i<optionsCache.length;i++){ if(optionsCache[i].id===id){o=optionsCache[i];break;} }
+  if(!o) return;
+  optEditId=id;
+  setText('opt-modal-title','Editar Opção — '+o.ticker);
+  $id('opt-ticker').value=o.ticker||'';
+  $id('opt-tipo').value=o.tipo||'CALL';
+  $id('opt-operacao').value=o.operacao||'COMPRA';
+  $id('opt-strike').value=o.strike!=null?o.strike:'';
+  $id('opt-premio').value=o.premio!=null?o.premio:'';
+  $id('opt-vencimento').value=o.vencimento||'';
+  $id('opt-qtd').value=o.quantidade||1;
+  $id('opt-valor-atual').value=o.valor_atual!=null?o.valor_atual:'';
+  $id('opt-lp').value=o.lucro_prejuizo!=null?o.lucro_prejuizo:'';
+  $id('opt-status').value=o.status||'aberta';
+  $id('opt-obs').value=o.obs||'';
+  $id('opt-del-btn').style.display='';
+  $id('opt-modal').classList.add('show');
+}
+
+function closeOptionModal(){
+  $id('opt-modal').classList.remove('show');
+  optEditId=null;
+}
+
+function saveOption(){
+  var ticker=$id('opt-ticker').value.trim();
+  var vencimento=$id('opt-vencimento').value;
+  var strike=parseFloat($id('opt-strike').value);
+  var premio=parseFloat($id('opt-premio').value);
+  if(!ticker){ toast('Informe o ticker','s'); return; }
+  if(!vencimento){ toast('Informe a data de vencimento','s'); return; }
+  if(isNaN(strike)||isNaN(premio)){ toast('Informe strike e prêmio','s'); return; }
+  if(!supabase||!currentUser){ toast('Sem conexão com o banco','s'); return; }
+
+  var row={
+    ticker:ticker,
+    tipo:$id('opt-tipo').value,
+    operacao:$id('opt-operacao').value,
+    strike:strike,
+    premio:premio,
+    vencimento:vencimento,
+    quantidade:parseInt($id('opt-qtd').value)||1,
+    valor_atual: $id('opt-valor-atual').value!==''?parseFloat($id('opt-valor-atual').value):null,
+    lucro_prejuizo: $id('opt-lp').value!==''?parseFloat($id('opt-lp').value):null,
+    status:$id('opt-status').value,
+    obs:$id('opt-obs').value.trim(),
+    updated_at:new Date().toISOString()
+  };
+
+  var btn=$id('opt-save-btn'); if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+
+  var req;
+  if(optEditId){
+    req=supabase.from('options').update(row).eq('id',optEditId);
+  } else {
+    row.id=uid();
+    row.created_by=currentUser.id;
+    row.created_at=new Date().toISOString();
+    req=supabase.from('options').insert(row);
+  }
+  req.then(function(res){
+    if(btn){btn.disabled=false;btn.textContent='Salvar';}
+    if(res.error){ toast('Erro ao salvar: '+res.error.message,'s'); return; }
+    closeOptionModal();
+    toast(optEditId?'Opção atualizada':'Opção cadastrada','g');
+    renderOpcoes();
+  });
+}
+
+function deleteOptionFromModal(){
+  if(!optEditId) return;
+  if(!confirm('Excluir esta opção permanentemente?')) return;
+  supabase.from('options').delete().eq('id',optEditId).then(function(res){
+    if(res.error){ toast('Erro ao excluir: '+res.error.message,'s'); return; }
+    closeOptionModal();
+    toast('Opção excluída','g');
+    renderOpcoes();
+  });
+}
+
+function toggleOptionStatus(id){
+  var o=null;
+  for(var i=0;i<optionsCache.length;i++){ if(optionsCache[i].id===id){o=optionsCache[i];break;} }
+  if(!o) return;
+  var newStatus = o.status==='aberta'?'encerrada':'aberta';
+  supabase.from('options').update({status:newStatus,updated_at:new Date().toISOString()}).eq('id',id).then(function(res){
+    if(res.error){ toast('Erro: '+res.error.message,'s'); return; }
+    toast(newStatus==='encerrada'?'Posição encerrada':'Posição reaberta','g');
+    renderOpcoes();
+  });
 }
 
 
