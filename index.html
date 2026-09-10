@@ -4112,9 +4112,21 @@ function curYearRange(){
 }
 // Get R$ result for a trader in a date range
 function traderResultR(tid, from, to){
-  var ops=loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
+  var trader = loadTraders().filter(function(t){return t.id===tid;})[0];
+  var csvOps = loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
+  var personalOps = trader ? getLinkedOps(trader, curAccount).filter(function(o){return o.date>=from&&o.date<=to;}) : [];
+  // Merge + dedupe (same logic as getMesaOps, since CSV imports and personal launches can overlap)
+  var seen={}, merged=[];
+  csvOps.forEach(function(o){
+    var key=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
+    seen[key]=true;merged.push(o);
+  });
+  personalOps.forEach(function(o){
+    var key=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
+    if(!seen[key]){seen[key]=true;merged.push(o);}
+  });
   var r=0;
-  ops.forEach(function(o){r+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
+  merged.forEach(function(o){r+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
   return r;
 }
 // Get R$ result for director in a date range
@@ -4141,9 +4153,12 @@ function renderMetas(){
   var badge=$id('metas-acct-badge');
   if(badge){badge.textContent=curAccount.toUpperCase();badge.className='acct-badge '+curAccount;}
 
-  renderMetasMensal();
-  renderMetasTrimestral();
-  renderMetasAnual();
+  var traders=loadTraders();
+  loadLinkedTraderOps(traders, curAccount, function(){
+    renderMetasMensal();
+    renderMetasTrimestral();
+    renderMetasAnual();
+  });
 }
 
 // ── MENSAL ────────────────────────────────────────────────────────────
