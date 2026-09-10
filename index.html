@@ -950,7 +950,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <div class="pg-sub">Progresso individual mensal · Metas trimestrais e anuais consolidadas</div>
     </div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="nav('config')">⚙ Configurar Metas</button>
+      <button class="btn btn-g btn-sm" onclick="openMetasConfig()">⚙ Configurar Metas</button>
     </div>
   </div>
 
@@ -1275,6 +1275,39 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-g" onclick="closeCadastroModal()">Cancelar</button>
       <button class="btn btn-del" id="cad-del-btn" onclick="deleteCadastroFromModal()" style="display:none;margin-right:auto">🗑 Excluir</button>
       <button class="btn btn-t" id="cad-save-btn" onclick="saveCadastro()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- METAS CONFIG MODAL -->
+<div class="mbk" id="metas-config-modal">
+  <div class="mdl mdl-wide">
+    <div class="mdl-title">⚙ Configurar Metas <span id="cfg-metas-badge" class="acct-badge demo">DEMO</span></div>
+    <div style="display:flex;flex-direction:column;gap:1.4rem;max-height:65vh;overflow-y:auto;padding-right:.35rem">
+      <div>
+        <div style="font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--tx3);text-transform:uppercase;margin-bottom:.6rem">📅 Metas Mensais por Trader</div>
+        <div class="frow" id="cfg-metas-mensais" style="flex-wrap:wrap"></div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--tx3);text-transform:uppercase;margin-bottom:.6rem">🎯 Metas Trimestrais (consolidada da mesa)</div>
+        <div class="frow">
+          <div class="fg"><label style="color:var(--gain)">Básico</label><input type="number" id="cfg-trim-basic" step="100" min="0" placeholder="ex: 30000"></div>
+          <div class="fg"><label style="color:var(--acc)">Intermediário</label><input type="number" id="cfg-trim-inter" step="100" min="0" placeholder="ex: 60000"></div>
+          <div class="fg"><label style="color:var(--purp)">Institucional</label><input type="number" id="cfg-trim-inst" step="100" min="0" placeholder="ex: 100000"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--tx3);text-transform:uppercase;margin-bottom:.6rem">🏆 Metas Anuais (consolidada da mesa)</div>
+        <div class="frow">
+          <div class="fg"><label style="color:var(--gain)">Básico</label><input type="number" id="cfg-anual-basic" step="100" min="0" placeholder="ex: 120000"></div>
+          <div class="fg"><label style="color:var(--acc)">Intermediário</label><input type="number" id="cfg-anual-inter" step="100" min="0" placeholder="ex: 240000"></div>
+          <div class="fg"><label style="color:var(--purp)">Institucional</label><input type="number" id="cfg-anual-inst" step="100" min="0" placeholder="ex: 400000"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mdl-foot">
+      <button class="btn btn-g" onclick="closeMetasConfig()">Cancelar</button>
+      <button class="btn btn-t" onclick="saveConfigMetasFromModal()">Salvar Metas</button>
     </div>
   </div>
 </div>
@@ -4405,6 +4438,20 @@ function renderHistItems(hist){
 }
 
 // ── CONFIG METAS ──────────────────────────────────────────────────────
+function openMetasConfig(){
+  renderConfigMetas();
+  $id('metas-config-modal').classList.add('show');
+}
+
+function closeMetasConfig(){
+  $id('metas-config-modal').classList.remove('show');
+}
+
+function saveConfigMetasFromModal(){
+  saveConfigMetas();
+  closeMetasConfig();
+}
+
 function renderConfigMetas(){
   var traders=loadTraders();
   var mensais=loadMetasMensais();
