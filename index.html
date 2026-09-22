@@ -40,11 +40,6 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear
 @keyframes ap{0%,100%{opacity:1}50%{opacity:.7}}
 #root{position:relative;z-index:1;display:flex;min-height:100vh}
 #sb{width:222px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:hidden}
-#sb-nav{flex:1;overflow-y:auto;overflow-x:hidden}
-#sb-nav::-webkit-scrollbar{width:3px}
-#sb-nav::-webkit-scrollbar-track{background:transparent}
-#sb-nav::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
-#sb-nav::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
 .sb-logo{padding:1.4rem 1.2rem .9rem;border-bottom:1px solid var(--b1)}
 .sb-name{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:.08em}
 .sb-tag{font-family:var(--mono);font-size:.58rem;color:var(--acc);letter-spacing:.14em;margin-top:3px}
@@ -456,7 +451,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-g" onclick="doLogout()" style="font-size:.55rem;padding:.2rem .5rem;line-height:1.2">Sair</button>
     </div>
   </div>
-  <div id="sb-nav">
   <div class="sb-sec">Operacional</div>
   <div class="sb-item on" id="n-today"     onclick="nav('today')"><span class="sb-icon">⚡</span>Hoje</div>
   <div class="sb-item"    id="n-history"   onclick="nav('history')"><span class="sb-icon">📋</span>Histórico</div>
@@ -469,13 +463,10 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-diario"    onclick="nav('diario')"><span class="sb-icon">📓</span>Diário</div>
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
   <div class="sb-item"    id="n-news"      onclick="nav('news')"><span class="sb-icon">📰</span>Notícias</div>
-  <div class="sb-sec">Restrito</div>
-  <div class="sb-item"    id="n-options"   onclick="nav('options')"  style="display:none"><span class="sb-icon">📄</span>Opções</div>
-  <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')" style="display:none"><span class="sb-icon">🪪</span>Cadastros</div>
+
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
-  </div><!-- /sb-nav -->
   <div class="sb-bot">
     <div class="acct-switch">
       <button class="acct-btn demo-on" id="btn-demo" onclick="setAccount('demo')">Demo</button>
@@ -3480,7 +3471,7 @@ function renderMesaTotalBanner(){
 
   var traderLiq=0, traderGains=0, traderStops=0, traderOps=0;
   traders.forEach(function(t){
-    var ops=getTOpsFiltered(t.id,mesaPeriod);
+    var ops=getMesaOps(t,mesaPeriod);
     ops.forEach(function(o){
       traderLiq+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);
       if(o.tipo==='GAIN') traderGains+=o.pts;
@@ -5267,17 +5258,17 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
+  diretor: ['mesa','metas','diario','pnl','news'],
   viewer:  ['news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
+  diretor: ['mesa','metas','diario','pnl','news'],
   viewer:  ['news']
 };
 
@@ -5293,7 +5284,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
