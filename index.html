@@ -40,6 +40,11 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear
 @keyframes ap{0%,100%{opacity:1}50%{opacity:.7}}
 #root{position:relative;z-index:1;display:flex;min-height:100vh}
 #sb{width:222px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:hidden}
+#sb-nav{flex:1;overflow-y:auto;overflow-x:hidden}
+#sb-nav::-webkit-scrollbar{width:3px}
+#sb-nav::-webkit-scrollbar-track{background:transparent}
+#sb-nav::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+#sb-nav::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
 .sb-logo{padding:1.4rem 1.2rem .9rem;border-bottom:1px solid var(--b1)}
 .sb-name{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:.08em}
 .sb-tag{font-family:var(--mono);font-size:.58rem;color:var(--acc);letter-spacing:.14em;margin-top:3px}
@@ -163,13 +168,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 .tname{font-family:var(--sans);font-size:.88rem;font-weight:600}
 .tops{font-family:var(--mono);font-size:.62rem;color:var(--tx3);margin-top:1px}
 .tcard-body{padding:.85rem 1.1rem}
-.tcard.bday-today{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn),0 0 18px #ffb02033}
-.tcard.bday-soon{border-color:var(--purp);box-shadow:0 0 0 1px var(--purp)55}
-.bday-banner{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.05em;padding:.4rem .85rem;text-align:center}
-.bday-banner.today{background:#ffb02022;color:var(--warn)}
-.bday-banner.soon{background:#a855f722;color:var(--purp)}
-.cad-row{display:flex;justify-content:space-between;gap:.5rem;font-family:var(--mono);font-size:.68rem;padding:.2rem 0;color:var(--tx2)}
-.cad-row .cad-lbl{color:var(--tx3)}
 .tnet{font-family:var(--mono);font-size:1.35rem;font-weight:700}
 .tstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-top:.65rem}
 .tstat{background:var(--s3);border-radius:var(--r);padding:.4rem .5rem;text-align:center}
@@ -380,11 +378,8 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 .aporte-item-info{font-family:var(--mono);font-size:.75rem}
 .aporte-item-val{font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--gain)}
 .aporte-item-date{font-family:var(--mono);font-size:.65rem;color:var(--tx3)}
-#acct-switch-m{display:none;position:fixed;top:.6rem;right:.6rem;z-index:900;gap:4px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:3px;box-shadow:0 2px 10px #0006}
-#acct-switch-m .acct-btn{padding:.4rem .55rem}
 @media(max-width:700px){
   #sb{display:none} #mnav{display:flex}
-  #acct-switch-m{display:flex}
   .kgrid{grid-template-columns:repeat(2,1fr)}
   .cgrid{grid-template-columns:1fr}
   .trader-grid{grid-template-columns:1fr}
@@ -461,6 +456,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-g" onclick="doLogout()" style="font-size:.55rem;padding:.2rem .5rem;line-height:1.2">Sair</button>
     </div>
   </div>
+  <div id="sb-nav">
   <div class="sb-sec">Operacional</div>
   <div class="sb-item on" id="n-today"     onclick="nav('today')"><span class="sb-icon">⚡</span>Hoje</div>
   <div class="sb-item"    id="n-history"   onclick="nav('history')"><span class="sb-icon">📋</span>Histórico</div>
@@ -473,14 +469,13 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-diario"    onclick="nav('diario')"><span class="sb-icon">📓</span>Diário</div>
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
   <div class="sb-item"    id="n-news"      onclick="nav('news')"><span class="sb-icon">📰</span>Notícias</div>
-
   <div class="sb-sec">Restrito</div>
-  <div class="sb-item"    id="n-opcoes"    onclick="nav('opcoes')"><span class="sb-icon">📑</span>Opções</div>
-  <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')"><span class="sb-icon">🪪</span>Cadastros</div>
-
+  <div class="sb-item"    id="n-options"   onclick="nav('options')"  style="display:none"><span class="sb-icon">📄</span>Opções</div>
+  <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')" style="display:none"><span class="sb-icon">🪪</span>Cadastros</div>
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
+  </div><!-- /sb-nav -->
   <div class="sb-bot">
     <div class="acct-switch">
       <button class="acct-btn demo-on" id="btn-demo" onclick="setAccount('demo')">Demo</button>
@@ -672,7 +667,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-t btn-sm" onclick="openImportModal()">⬆ Importar CSV</button>
     </div>
   </div>
-  <div id="mesa-bday-alert" style="display:none;margin-bottom:1.1rem"></div>
   <div class="mesa-banner" id="mesa-banner">
     <div><div class="mb-lbl">Média da Mesa (período selecionado)</div><div class="mb-val" id="mb-val">-- pts</div></div>
     <div class="mb-stats" id="mb-stats"></div>
@@ -772,7 +766,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     </div>
     <div style="display:flex;gap:.5rem;align-items:center">
       <div id="cal-last-update" style="font-family:var(--mono);font-size:.6rem;color:var(--tx3)"></div>
-      <button class="btn btn-g btn-sm" id="cal-refresh-btn" onclick="refreshNews()">↻ Atualizar</button>
     </div>
   </div>
 
@@ -781,53 +774,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <div class="cal-loading">Carregando calendário...</div>
   </div>
 </div>
-
-<!-- OPÇÕES (restrito: Gestor e Diretor) -->
-<div class="pg" id="page-opcoes">
-  <div class="pg-head">
-    <div>
-      <div class="pg-title">📑 Controle de Opções</div>
-      <div class="pg-sub">Registro manual de opções em aberto · acesso restrito</div>
-    </div>
-    <button class="btn btn-p btn-sm" onclick="openAddOption()">+ Nova Opção</button>
-  </div>
-
-  <div class="kgrid" id="opt-kpis" style="margin-bottom:1.25rem"></div>
-
-  <div class="ptabs" id="opt-ptabs">
-    <button class="ptab on" data-op="aberta"    onclick="setOptFilter('aberta')">Abertas</button>
-    <button class="ptab"    data-op="encerrada" onclick="setOptFilter('encerrada')">Encerradas</button>
-    <button class="ptab"    data-op="all"       onclick="setOptFilter('all')">Todas</button>
-  </div>
-
-  <div class="sec" style="margin-top:.85rem">
-    <div style="overflow-x:auto">
-      <table>
-        <thead><tr>
-          <th>Ticker</th><th>Tipo</th><th>Operação</th><th>Strike</th><th>Prêmio</th>
-          <th>Vencimento</th><th>Valor Atual</th><th>L/P</th><th>Status</th><th></th>
-        </tr></thead>
-        <tbody id="opt-tbody"></tbody>
-      </table>
-      <div id="opt-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhuma opção registrada neste filtro</div>
-    </div>
-  </div>
-</div>
-
-<!-- CADASTROS (restrito: Gestor e Diretor) -->
-<div class="pg" id="page-cadastros">
-  <div class="pg-head">
-    <div>
-      <div class="pg-title">🪪 Cadastros da Mesa</div>
-      <div class="pg-sub">Dados pessoais dos traders · acesso restrito</div>
-    </div>
-    <button class="btn btn-p btn-sm" onclick="openAddCadastro()">+ Novo Cadastro</button>
-  </div>
-
-  <div class="trader-grid" id="cad-grid"></div>
-  <div id="cad-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum cadastro registrado ainda</div>
-</div>
-
 
 <!-- DIÁRIO -->
 <div class="pg" id="page-diario">
@@ -950,7 +896,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <div class="pg-sub">Progresso individual mensal · Metas trimestrais e anuais consolidadas</div>
     </div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="openMetasConfig()">⚙ Configurar Metas</button>
+      <button class="btn btn-g btn-sm" onclick="nav('config')">⚙ Configurar Metas</button>
     </div>
   </div>
 
@@ -1215,103 +1161,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 
-<!-- OPÇÃO MODAL -->
-<div class="mbk" id="opt-modal">
-  <div class="mdl">
-    <div class="mdl-title" id="opt-modal-title">Nova Opção</div>
-    <div style="display:flex;flex-direction:column;gap:.85rem">
-      <div class="frow">
-        <div class="fg" style="flex:1"><label>Ticker</label><input type="text" id="opt-ticker" placeholder="ex: PETRK280" maxlength="12" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-        <div class="fg" style="width:130px"><label>Tipo</label><select id="opt-tipo"><option value="CALL">CALL</option><option value="PUT">PUT</option></select></div>
-        <div class="fg" style="width:150px"><label>Operação</label><select id="opt-operacao"><option value="COMPRA">Compra</option><option value="VENDA">Venda</option></select></div>
-      </div>
-      <div class="frow">
-        <div class="fg"><label>Strike (R$)</label><input type="number" id="opt-strike" step="0.01" placeholder="0,00" oninput="autoCalcOptionPL()"></div>
-        <div class="fg"><label>Prêmio (R$)</label><input type="number" id="opt-premio" step="0.01" placeholder="0,00" oninput="autoCalcOptionPL()"></div>
-        <div class="fg"><label>Vencimento</label><input type="date" id="opt-vencimento"></div>
-      </div>
-      <div class="frow">
-        <div class="fg"><label>Qtde (contratos)</label><input type="number" id="opt-qtd" step="1" min="1" value="1" oninput="autoCalcOptionPL()"></div>
-        <div class="fg"><label>Valor atual do papel (R$)</label><input type="number" id="opt-valor-atual" step="0.01" placeholder="0,00" oninput="autoCalcOptionPL()"></div>
-      </div>
-      <div class="frow">
-        <div class="fg" style="flex:1">
-          <label>Lucro / Prejuízo (R$)</label>
-          <input type="number" id="opt-lp" step="0.01" placeholder="0,00">
-          <div style="font-family:var(--mono);font-size:.57rem;color:var(--tx3);margin-top:.25rem">Estimado automaticamente pelo valor intrínseco · pode ser ajustado manualmente</div>
-        </div>
-        <div class="fg" style="width:160px"><label>Status</label><select id="opt-status"><option value="aberta">Aberta</option><option value="encerrada">Encerrada</option></select></div>
-      </div>
-      <div class="fg"><label>Observação (opcional)</label><input type="text" id="opt-obs" placeholder="ex: trava, hedge, especulativo..." maxlength="120"></div>
-    </div>
-    <div class="mdl-foot">
-      <button class="btn btn-g" onclick="closeOptionModal()">Cancelar</button>
-      <button class="btn btn-del" id="opt-del-btn" onclick="deleteOptionFromModal()" style="display:none;margin-right:auto">🗑 Excluir</button>
-      <button class="btn btn-t" id="opt-save-btn" onclick="saveOption()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- CADASTRO MODAL -->
-<div class="mbk" id="cad-modal">
-  <div class="mdl">
-    <div class="mdl-title" id="cad-modal-title">Novo Cadastro</div>
-    <div style="display:flex;flex-direction:column;gap:.85rem">
-      <div class="frow">
-        <div class="fg" style="flex:1"><label>Nome completo</label><input type="text" id="cad-nome" placeholder="ex: João Silva" maxlength="60"></div>
-        <div class="fg" style="width:150px"><label>Sexo</label><select id="cad-sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Feminino</option><option value="Outro">Outro</option></select></div>
-      </div>
-      <div class="frow">
-        <div class="fg"><label>Telefone</label><input type="tel" id="cad-telefone" placeholder="(00) 00000-0000"></div>
-        <div class="fg" style="flex:1"><label>Email pessoal</label><input type="email" id="cad-email" placeholder="nome@email.com"></div>
-      </div>
-      <div class="frow">
-        <div class="fg"><label>Telefone de emergência</label><input type="tel" id="cad-tel-emerg" placeholder="(00) 00000-0000"></div>
-        <div class="fg"><label>Data de nascimento</label><input type="date" id="cad-nascimento"></div>
-      </div>
-      <div class="fg"><label>Observação (opcional)</label><input type="text" id="cad-obs" placeholder="ex: contato é o cônjuge, mãe, etc." maxlength="120"></div>
-    </div>
-    <div class="mdl-foot">
-      <button class="btn btn-g" onclick="closeCadastroModal()">Cancelar</button>
-      <button class="btn btn-del" id="cad-del-btn" onclick="deleteCadastroFromModal()" style="display:none;margin-right:auto">🗑 Excluir</button>
-      <button class="btn btn-t" id="cad-save-btn" onclick="saveCadastro()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- METAS CONFIG MODAL -->
-<div class="mbk" id="metas-config-modal">
-  <div class="mdl mdl-wide">
-    <div class="mdl-title">⚙ Configurar Metas <span id="cfg-metas-badge" class="acct-badge demo">DEMO</span></div>
-    <div style="display:flex;flex-direction:column;gap:1.4rem;max-height:65vh;overflow-y:auto;padding-right:.35rem">
-      <div>
-        <div style="font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--tx3);text-transform:uppercase;margin-bottom:.6rem">📅 Metas Mensais por Trader</div>
-        <div class="frow" id="cfg-metas-mensais" style="flex-wrap:wrap"></div>
-      </div>
-      <div>
-        <div style="font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--tx3);text-transform:uppercase;margin-bottom:.6rem">🎯 Metas Trimestrais (consolidada da mesa)</div>
-        <div class="frow">
-          <div class="fg"><label style="color:var(--gain)">Básico</label><input type="number" id="cfg-trim-basic" step="100" min="0" placeholder="ex: 30000"></div>
-          <div class="fg"><label style="color:var(--acc)">Intermediário</label><input type="number" id="cfg-trim-inter" step="100" min="0" placeholder="ex: 60000"></div>
-          <div class="fg"><label style="color:var(--purp)">Institucional</label><input type="number" id="cfg-trim-inst" step="100" min="0" placeholder="ex: 100000"></div>
-        </div>
-      </div>
-      <div>
-        <div style="font-family:var(--mono);font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--tx3);text-transform:uppercase;margin-bottom:.6rem">🏆 Metas Anuais (consolidada da mesa)</div>
-        <div class="frow">
-          <div class="fg"><label style="color:var(--gain)">Básico</label><input type="number" id="cfg-anual-basic" step="100" min="0" placeholder="ex: 120000"></div>
-          <div class="fg"><label style="color:var(--acc)">Intermediário</label><input type="number" id="cfg-anual-inter" step="100" min="0" placeholder="ex: 240000"></div>
-          <div class="fg"><label style="color:var(--purp)">Institucional</label><input type="number" id="cfg-anual-inst" step="100" min="0" placeholder="ex: 400000"></div>
-        </div>
-      </div>
-    </div>
-    <div class="mdl-foot">
-      <button class="btn btn-g" onclick="closeMetasConfig()">Cancelar</button>
-      <button class="btn btn-t" onclick="saveConfigMetasFromModal()">Salvar Metas</button>
-    </div>
-  </div>
-</div>
-
 <!-- APORTE MODAL -->
 <div class="mbk" id="aporte-modal">
   <div class="mdl" style="max-width:500px">
@@ -1497,10 +1346,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 
-<div id="acct-switch-m">
-  <button class="acct-btn demo-on" id="btn-demo-m" onclick="setAccount('demo')">Demo</button>
-  <button class="acct-btn" id="btn-real-m" onclick="setAccount('real')">Real</button>
-</div>
 <div id="mnav">
   <button class="mnbtn on" id="mn-today"     onclick="nav('today');mnavSel(this)"><span class="mi">⚡</span>Hoje</button>
   <button class="mnbtn"    id="mn-history"   onclick="nav('history');mnavSel(this)"><span class="mi">📋</span>Hist</button>
@@ -1510,8 +1355,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-diario"    onclick="nav('diario');mnavSel(this)"><span class="mi">📓</span>Diário</button>
   <button class="mnbtn"    id="mn-pnl"       onclick="nav('pnl');mnavSel(this)"><span class="mi">📅</span>PNL</button>
   <button class="mnbtn"    id="mn-news"      onclick="nav('news');mnavSel(this)"><span class="mi">📰</span>News</button>
-  <button class="mnbtn"    id="mn-opcoes"    onclick="nav('opcoes');mnavSel(this)"><span class="mi">📑</span>Opções</button>
-  <button class="mnbtn"    id="mn-cadastros" onclick="nav('cadastros');mnavSel(this)"><span class="mi">🪪</span>Cadastros</button>
   <button class="mnbtn"    id="mn-config"    onclick="nav('config');mnavSel(this)"><span class="mi">⚙️</span>Cfg</button>
 </div>
 <div id="toast"></div>
@@ -1547,9 +1390,6 @@ function setAccount(acct){
   var bd=$id('btn-demo'),br=$id('btn-real');
   if(bd){bd.className='acct-btn'+(acct==='demo'?' demo-on':'');}
   if(br){br.className='acct-btn'+(acct==='real'?' real-on':'');}
-  var bdm=$id('btn-demo-m'),brm=$id('btn-real-m');
-  if(bdm){bdm.className='acct-btn'+(acct==='demo'?' demo-on':'');}
-  if(brm){brm.className='acct-btn'+(acct==='real'?' real-on':'');}
   // Reload account-specific config (meta, sloss, contratos etc)
   loadCFG();
   // Update KPI sub-labels with new account meta/sloss values
@@ -1567,7 +1407,6 @@ function setAccount(acct){
   else if(curPage==='mesa')renderMesa();
   else if(curPage==='ranking')renderRanking();
   else if(curPage==='export')renderExpPreview();
-  else if(curPage==='diario')renderDiario();
   updateAccountBadges();
   renderSaldo();
   if(curPage==='metas')renderMetas();
@@ -1686,8 +1525,6 @@ function nav(page){
   else if(page==='ranking')renderRanking();
   else if(page==='export')renderExpPreview();
   else if(page==='config')renderConfig();
-  else if(page==='opcoes')renderOpcoes();
-  else if(page==='cadastros')renderCadastros();
 }
 function mnavSel(el){document.querySelectorAll('.mnbtn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
 // TODAY
@@ -2287,7 +2124,6 @@ function renderTraderCards(traders){
 
 function renderMesa(){
   var role=getRole();
-  renderMesaBdayAlert();
   // Diretor sees only their own section
   var dirSec=$id('director-section');
   var traderGrid=$id('trader-grid');
@@ -4112,21 +3948,9 @@ function curYearRange(){
 }
 // Get R$ result for a trader in a date range
 function traderResultR(tid, from, to){
-  var trader = loadTraders().filter(function(t){return t.id===tid;})[0];
-  var csvOps = loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
-  var personalOps = trader ? getLinkedOps(trader, curAccount).filter(function(o){return o.date>=from&&o.date<=to;}) : [];
-  // Merge + dedupe (same logic as getMesaOps, since CSV imports and personal launches can overlap)
-  var seen={}, merged=[];
-  csvOps.forEach(function(o){
-    var key=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
-    seen[key]=true;merged.push(o);
-  });
-  personalOps.forEach(function(o){
-    var key=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
-    if(!seen[key]){seen[key]=true;merged.push(o);}
-  });
+  var ops=loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
   var r=0;
-  merged.forEach(function(o){r+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
+  ops.forEach(function(o){r+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
   return r;
 }
 // Get R$ result for director in a date range
@@ -4153,12 +3977,9 @@ function renderMetas(){
   var badge=$id('metas-acct-badge');
   if(badge){badge.textContent=curAccount.toUpperCase();badge.className='acct-badge '+curAccount;}
 
-  var traders=loadTraders();
-  loadLinkedTraderOps(traders, curAccount, function(){
-    renderMetasMensal();
-    renderMetasTrimestral();
-    renderMetasAnual();
-  });
+  renderMetasMensal();
+  renderMetasTrimestral();
+  renderMetasAnual();
 }
 
 // ── MENSAL ────────────────────────────────────────────────────────────
@@ -4453,20 +4274,6 @@ function renderHistItems(hist){
 }
 
 // ── CONFIG METAS ──────────────────────────────────────────────────────
-function openMetasConfig(){
-  renderConfigMetas();
-  $id('metas-config-modal').classList.add('show');
-}
-
-function closeMetasConfig(){
-  $id('metas-config-modal').classList.remove('show');
-}
-
-function saveConfigMetasFromModal(){
-  saveConfigMetas();
-  closeMetasConfig();
-}
-
 function renderConfigMetas(){
   var traders=loadTraders();
   var mensais=loadMetasMensais();
@@ -5180,16 +4987,8 @@ function saveDiaryEntry(){
 
 // ── GET DAY PNL ───────────────────────────────────────────────────────
 function getDayPnl(isoDate, acct){
-  var useAcct = acct||curAccount;
-  var ops;
-  if(diaryViewUserId){
-    // Viewing another trader's diary — use their personal ops, never the logged-in user's own
-    var cache = diaryViewOpsCache[diaryViewUserId];
-    ops = ((cache&&cache[useAcct])||[]).filter(function(o){ return o.date===isoDate; });
-  } else {
-    ops = (JSON.parse(localStorage.getItem('dt_ops_'+useAcct)||'[]'))
-      .filter(function(o){ return o.date===isoDate; });
-  }
+  var ops = (JSON.parse(localStorage.getItem('dt_ops_'+(acct||curAccount))||'[]'))
+    .filter(function(o){ return o.date===isoDate; });
   var r = 0;
   ops.forEach(function(o){ r += o.tipo==='GAIN'?(o.val||o.pts*CFG.ptval):-(o.val||o.pts*CFG.ptval); });
   return {val:r, ops:ops.length};
@@ -5299,18 +5098,14 @@ function renderDiario(){
   // Hide paste zone for viewers
   var pz=$id('diary-paste-zone');
   if(pz)pz.style.display=diaryViewUserId?'none':'';
-  function afterOpsInit(){
-    loadDiaryCache(diaryYear, diaryMonth, function(){
-      renderDiaryCalendar();
-      // Auto-select today if in current month
-      var now=new Date();
-      if(diaryYear===now.getFullYear()&&diaryMonth===now.getMonth()){
-        selectDiaryDay(now.toISOString().slice(0,10));
-      }
-    });
-  }
-  if(diaryViewUserId){ loadDiaryViewOps(diaryViewUserId, curAccount, afterOpsInit); }
-  else { afterOpsInit(); }
+  loadDiaryCache(diaryYear, diaryMonth, function(){
+    renderDiaryCalendar();
+    // Auto-select today if in current month
+    var now=new Date();
+    if(diaryYear===now.getFullYear()&&diaryMonth===now.getMonth()){
+      selectDiaryDay(now.toISOString().slice(0,10));
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -5472,17 +5267,17 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
+  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
   viewer:  ['news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
+  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
   viewer:  ['news']
 };
 
@@ -5498,7 +5293,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
@@ -5839,22 +5634,6 @@ function loadGestorDiaryEntry(){
 
 // ── DIARY PERSON SELECTOR (gestor only) ──────────────────────────────
 var diaryViewUserId = null;  // null = own diary, string = viewing another user
-var diaryViewOpsCache = {};  // diaryViewOpsCache[userId][account_type] = [ops] — personal ops of the trader being viewed
-
-function loadDiaryViewOps(userId, acct, callback){
-  if(!supabase||!userId){ if(callback) callback(); return; }
-  if(diaryViewOpsCache[userId] && diaryViewOpsCache[userId][acct]){ if(callback) callback(); return; }
-  supabase.from('operations').select('*')
-    .eq('user_id',userId).eq('account_type',acct)
-    .then(function(res){
-      if(!diaryViewOpsCache[userId]) diaryViewOpsCache[userId]={};
-      diaryViewOpsCache[userId][acct]=(res.data||[]).map(function(r){
-        return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,
-               pts:parseFloat(r.pts)||0,val:parseFloat(r.val||0),obs:r.obs||''};
-      });
-      if(callback) callback();
-    });
-}
 
 function initDiaryPersonSelector(){
   var wrap=$id('diary-person-wrap');
@@ -5907,15 +5686,11 @@ function onDiaryPersonChange(){
   diaryYear=new Date().getFullYear();
   diarySelDate=null;
   diaryCache={};
-  function afterOps(){
-    loadDiaryCache(diaryYear,diaryMonth,function(){
-      renderDiaryCalendar();
-      var todayStr=new Date().toISOString().slice(0,10);
-      selectDiaryDay(todayStr);
-    });
-  }
-  if(diaryViewUserId){ loadDiaryViewOps(diaryViewUserId, curAccount, afterOps); }
-  else { afterOps(); }
+  loadDiaryCache(diaryYear,diaryMonth,function(){
+    renderDiaryCalendar();
+    var todayStr=new Date().toISOString().slice(0,10);
+    selectDiaryDay(todayStr);
+  });
 }
 
 // ── LINKED TRADER OPS CACHE ──────────────────────────────────────────
@@ -5994,7 +5769,6 @@ function renderNews(){
 
   // Investing.com economic calendar widget
   var widget=document.createElement('iframe');
-  widget.id='cal-iframe';
   widget.src='https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=32,5,72&importance=3,2&calType=week&timeZone=10&lang=12';
   widget.style.cssText='width:100%;height:650px;border:none;display:block';
   widget.setAttribute('frameborder','0');
@@ -6020,422 +5794,6 @@ function renderNews(){
 
   var luEl=$id('cal-last-update');
   if(luEl)luEl.textContent='Widget carregado';
-}
-
-function refreshNews(){
-  var iframe=$id('cal-iframe');
-  var btn=$id('cal-refresh-btn');
-  var luEl=$id('cal-last-update');
-  if(!iframe){
-    // Widget never loaded yet — force a fresh render
-    calWidgetLoaded=false;
-    renderNews();
-    return;
-  }
-  if(btn){btn.disabled=true;btn.innerHTML='↻ Atualizando...';}
-  // Reassigning src forces the iframe to reload without refreshing the whole page
-  iframe.src=iframe.src;
-  iframe.onload=function(){
-    if(btn){btn.disabled=false;btn.innerHTML='↻ Atualizar';}
-    if(luEl)luEl.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR');
-    toast('Calendário atualizado','g');
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// OPÇÕES — controle e registro de opções em aberto (restrito: gestor/diretor)
-// ═══════════════════════════════════════════════════════════════════
-
-var optionsCache = [];
-var optEditId = null;
-var optFilter = 'aberta';
-
-function loadOptions(callback){
-  if(!supabase||!currentUser){ optionsCache=[]; if(callback)callback(); return; }
-  supabase.from('options').select('*').order('vencimento',{ascending:true})
-    .then(function(res){
-      if(res.error){ console.warn('options load error:',res.error.message); optionsCache=[]; }
-      else optionsCache=res.data||[];
-      if(callback)callback();
-    });
-}
-
-function setOptFilter(f){
-  optFilter=f;
-  document.querySelectorAll('#opt-ptabs .ptab').forEach(function(b){
-    b.classList.toggle('on', b.getAttribute('data-op')===f);
-  });
-  renderOptionsTable();
-}
-
-function renderOpcoes(){
-  loadOptions(function(){
-    renderOptionsKpis();
-    renderOptionsTable();
-  });
-}
-
-function renderOptionsKpis(){
-  var wrap=$id('opt-kpis'); if(!wrap) return;
-  var abertas=optionsCache.filter(function(o){return o.status==='aberta';});
-  var totalPremio=0, totalLP=0;
-  abertas.forEach(function(o){
-    totalPremio += (parseFloat(o.premio)||0)*(parseInt(o.quantidade)||1)*(o.operacao==='COMPRA'?1:-1);
-    totalLP += parseFloat(o.lucro_prejuizo)||0;
-  });
-  var in7=abertas.filter(function(o){
-    var d=new Date(o.vencimento+'T00:00:00'), now=new Date();
-    var diff=(d-now)/(1000*60*60*24);
-    return diff>=0 && diff<=7;
-  }).length;
-  var html='';
-  html+='<div class="kcard ka"><div class="klbl">Posições Abertas</div><div class="kval">'+abertas.length+'</div><div class="ksub">'+optionsCache.length+' no total</div></div>';
-  html+='<div class="kcard '+(totalLP>=0?'kg':'ks')+'"><div class="klbl">L/P Total (abertas)</div><div class="kval">'+(totalLP>=0?'+':'')+fmtR(totalLP)+'</div><div class="ksub">estimado</div></div>';
-  html+='<div class="kcard kt"><div class="klbl">Prêmio Líquido (abertas)</div><div class="kval">'+fmtR(totalPremio)+'</div><div class="ksub">compra soma / venda subtrai</div></div>';
-  html+='<div class="kcard '+(in7>0?'kw':'kt')+'"><div class="klbl">Vencendo em 7 dias</div><div class="kval">'+in7+'</div><div class="ksub">posições abertas</div></div>';
-  wrap.innerHTML=html;
-}
-
-function renderOptionsTable(){
-  var tb=$id('opt-tbody'), empty=$id('opt-empty');
-  if(!tb) return;
-  var list=optionsCache.filter(function(o){
-    if(optFilter==='all') return true;
-    return o.status===optFilter;
-  });
-  if(!list.length){
-    tb.innerHTML='';
-    if(empty) empty.style.display='';
-    return;
-  }
-  if(empty) empty.style.display='none';
-  var html='';
-  list.forEach(function(o){
-    var lp=parseFloat(o.lucro_prejuizo)||0;
-    var vencDate=new Date(o.vencimento+'T00:00:00');
-    var vencStr=vencDate.toLocaleDateString('pt-BR');
-    var diffDays=Math.ceil((vencDate-new Date())/(1000*60*60*24));
-    var vencCls = o.status==='aberta' && diffDays<=3 ? 'color:var(--stop);font-weight:700' : o.status==='aberta' && diffDays<=7 ? 'color:var(--warn)' : '';
-    html+='<tr onclick="openEditOption(&quot;'+o.id+'&quot;)" style="cursor:pointer">'+
-      '<td style="font-weight:700">'+esc(o.ticker)+'</td>'+
-      '<td><span class="acct-badge '+(o.tipo==='CALL'?'demo':'real')+'">'+o.tipo+'</span></td>'+
-      '<td>'+(o.operacao==='COMPRA'?'Compra':'Venda')+'</td>'+
-      '<td>'+fmtR(o.strike)+'</td>'+
-      '<td>'+fmtR(o.premio)+(o.quantidade>1?' ×'+o.quantidade:'')+'</td>'+
-      '<td style="'+vencCls+'">'+vencStr+'</td>'+
-      '<td>'+(o.valor_atual!=null?fmtR(o.valor_atual):'--')+'</td>'+
-      '<td style="color:'+(lp>=0?'var(--gain)':'var(--stop)')+';font-weight:700">'+(lp>=0?'+':'')+fmtR(lp)+'</td>'+
-      '<td><span class="acct-badge '+(o.status==='aberta'?'real':'demo')+'">'+(o.status==='aberta'?'Aberta':'Encerrada')+'</span></td>'+
-      '<td onclick="event.stopPropagation()"><button class="btn btn-g btn-sm" onclick="toggleOptionStatus(&quot;'+o.id+'&quot;)">'+(o.status==='aberta'?'Encerrar':'Reabrir')+'</button></td>'+
-      '</tr>';
-  });
-  tb.innerHTML=html;
-}
-
-function esc(s){ return (s||'').toString().replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function autoCalcOptionPL(){
-  var strike=parseFloat($id('opt-strike').value)||0;
-  var premio=parseFloat($id('opt-premio').value)||0;
-  var valorAtual=parseFloat($id('opt-valor-atual').value);
-  var qtd=parseInt($id('opt-qtd').value)||1;
-  if(isNaN(valorAtual)) return; // don't overwrite until user informs current price
-  var tipo=$id('opt-tipo').value;
-  var operacao=$id('opt-operacao').value;
-  var intrinseco = tipo==='CALL' ? Math.max(valorAtual-strike,0) : Math.max(strike-valorAtual,0);
-  var lp = operacao==='COMPRA' ? (intrinseco-premio) : (premio-intrinseco);
-  lp = lp*qtd;
-  $id('opt-lp').value = lp.toFixed(2);
-}
-
-function openAddOption(){
-  optEditId=null;
-  setText('opt-modal-title','Nova Opção');
-  $id('opt-ticker').value='';
-  $id('opt-tipo').value='CALL';
-  $id('opt-operacao').value='COMPRA';
-  $id('opt-strike').value='';
-  $id('opt-premio').value='';
-  $id('opt-vencimento').value='';
-  $id('opt-qtd').value='1';
-  $id('opt-valor-atual').value='';
-  $id('opt-lp').value='';
-  $id('opt-status').value='aberta';
-  $id('opt-obs').value='';
-  $id('opt-del-btn').style.display='none';
-  $id('opt-modal').classList.add('show');
-}
-
-function openEditOption(id){
-  var o=null;
-  for(var i=0;i<optionsCache.length;i++){ if(optionsCache[i].id===id){o=optionsCache[i];break;} }
-  if(!o) return;
-  optEditId=id;
-  setText('opt-modal-title','Editar Opção — '+o.ticker);
-  $id('opt-ticker').value=o.ticker||'';
-  $id('opt-tipo').value=o.tipo||'CALL';
-  $id('opt-operacao').value=o.operacao||'COMPRA';
-  $id('opt-strike').value=o.strike!=null?o.strike:'';
-  $id('opt-premio').value=o.premio!=null?o.premio:'';
-  $id('opt-vencimento').value=o.vencimento||'';
-  $id('opt-qtd').value=o.quantidade||1;
-  $id('opt-valor-atual').value=o.valor_atual!=null?o.valor_atual:'';
-  $id('opt-lp').value=o.lucro_prejuizo!=null?o.lucro_prejuizo:'';
-  $id('opt-status').value=o.status||'aberta';
-  $id('opt-obs').value=o.obs||'';
-  $id('opt-del-btn').style.display='';
-  $id('opt-modal').classList.add('show');
-}
-
-function closeOptionModal(){
-  $id('opt-modal').classList.remove('show');
-  optEditId=null;
-}
-
-function saveOption(){
-  var ticker=$id('opt-ticker').value.trim();
-  var vencimento=$id('opt-vencimento').value;
-  var strike=parseFloat($id('opt-strike').value);
-  var premio=parseFloat($id('opt-premio').value);
-  if(!ticker){ toast('Informe o ticker','s'); return; }
-  if(!vencimento){ toast('Informe a data de vencimento','s'); return; }
-  if(isNaN(strike)||isNaN(premio)){ toast('Informe strike e prêmio','s'); return; }
-  if(!supabase||!currentUser){ toast('Sem conexão com o banco','s'); return; }
-
-  var row={
-    ticker:ticker,
-    tipo:$id('opt-tipo').value,
-    operacao:$id('opt-operacao').value,
-    strike:strike,
-    premio:premio,
-    vencimento:vencimento,
-    quantidade:parseInt($id('opt-qtd').value)||1,
-    valor_atual: $id('opt-valor-atual').value!==''?parseFloat($id('opt-valor-atual').value):null,
-    lucro_prejuizo: $id('opt-lp').value!==''?parseFloat($id('opt-lp').value):null,
-    status:$id('opt-status').value,
-    obs:$id('opt-obs').value.trim(),
-    updated_at:new Date().toISOString()
-  };
-
-  var btn=$id('opt-save-btn'); if(btn){btn.disabled=true;btn.textContent='Salvando...';}
-
-  var req;
-  if(optEditId){
-    req=supabase.from('options').update(row).eq('id',optEditId);
-  } else {
-    row.id=uid();
-    row.created_by=currentUser.id;
-    row.created_at=new Date().toISOString();
-    req=supabase.from('options').insert(row);
-  }
-  req.then(function(res){
-    if(btn){btn.disabled=false;btn.textContent='Salvar';}
-    if(res.error){ toast('Erro ao salvar: '+res.error.message,'s'); return; }
-    closeOptionModal();
-    toast(optEditId?'Opção atualizada':'Opção cadastrada','g');
-    renderOpcoes();
-  });
-}
-
-function deleteOptionFromModal(){
-  if(!optEditId) return;
-  if(!confirm('Excluir esta opção permanentemente?')) return;
-  supabase.from('options').delete().eq('id',optEditId).then(function(res){
-    if(res.error){ toast('Erro ao excluir: '+res.error.message,'s'); return; }
-    closeOptionModal();
-    toast('Opção excluída','g');
-    renderOpcoes();
-  });
-}
-
-function toggleOptionStatus(id){
-  var o=null;
-  for(var i=0;i<optionsCache.length;i++){ if(optionsCache[i].id===id){o=optionsCache[i];break;} }
-  if(!o) return;
-  var newStatus = o.status==='aberta'?'encerrada':'aberta';
-  supabase.from('options').update({status:newStatus,updated_at:new Date().toISOString()}).eq('id',id).then(function(res){
-    if(res.error){ toast('Erro: '+res.error.message,'s'); return; }
-    toast(newStatus==='encerrada'?'Posição encerrada':'Posição reaberta','g');
-    renderOpcoes();
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// CADASTROS — dados pessoais dos traders (restrito: gestor/diretor)
-// ═══════════════════════════════════════════════════════════════════
-
-var cadastrosCache = [];
-var cadEditId = null;
-
-function loadCadastros(callback){
-  if(!supabase||!currentUser){ cadastrosCache=[]; if(callback)callback(); return; }
-  supabase.from('cadastros').select('*').order('nome',{ascending:true})
-    .then(function(res){
-      if(res.error){ console.warn('cadastros load error:',res.error.message); cadastrosCache=[]; }
-      else cadastrosCache=res.data||[];
-      if(callback)callback();
-    });
-}
-
-function renderCadastros(){
-  loadCadastros(function(){
-    renderCadastrosGrid();
-  });
-}
-
-function daysUntilBirthday(isoDate){
-  if(!isoDate) return null;
-  var parts=isoDate.split('-');
-  var bMonth=parseInt(parts[1])-1, bDay=parseInt(parts[2]);
-  var now=new Date(); now.setHours(0,0,0,0);
-  var next=new Date(now.getFullYear(),bMonth,bDay);
-  if(next<now) next=new Date(now.getFullYear()+1,bMonth,bDay);
-  return Math.round((next-now)/(1000*60*60*24));
-}
-
-function fmtBirthdate(isoDate){
-  if(!isoDate) return null;
-  var parts=isoDate.split('-');
-  return parts[2]+'/'+parts[1]+'/'+parts[0];
-}
-
-function renderCadastrosGrid(){
-  var grid=$id('cad-grid'), empty=$id('cad-empty');
-  if(!grid) return;
-  if(!cadastrosCache.length){
-    grid.innerHTML='';
-    if(empty) empty.style.display='';
-    return;
-  }
-  if(empty) empty.style.display='none';
-  var sexoLabel={M:'Masculino',F:'Feminino',Outro:'Outro'};
-  var html='';
-  cadastrosCache.forEach(function(c,idx){
-    var dias=daysUntilBirthday(c.data_nascimento);
-    var isToday = dias===0;
-    var isSoon = dias!==null && dias>0 && dias<=7;
-    var cardCls='tcard'+(isToday?' bday-today':isSoon?' bday-soon':'');
-    var tc=PALETTE[idx%PALETTE.length];
-    html+='<div class="'+cardCls+'">';
-    if(isToday){
-      html+='<div class="bday-banner today">🎉 Aniversário hoje!</div>';
-    } else if(isSoon){
-      html+='<div class="bday-banner soon">🎂 Aniversário em '+dias+(dias===1?' dia':' dias')+'</div>';
-    }
-    html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc+'22;color:'+tc+';border:1px solid '+tc+'44">'+esc((c.nome||'?').slice(0,2).toUpperCase())+'</div><div><div class="tname">'+esc(c.nome)+(isToday?' 🎈':'')+'</div><div class="tops">'+(sexoLabel[c.sexo]||'--')+'</div></div></div></div>';
-    html+='<div class="tcard-body">';
-    html+='<div class="cad-row"><span class="cad-lbl">Telefone</span><span>'+esc(c.telefone||'--')+'</span></div>';
-    html+='<div class="cad-row"><span class="cad-lbl">Email pessoal</span><span>'+esc(c.email_pessoal||'--')+'</span></div>';
-    html+='<div class="cad-row"><span class="cad-lbl">Tel. emergência</span><span>'+esc(c.telefone_emergencia||'--')+'</span></div>';
-    html+='<div class="cad-row"><span class="cad-lbl">Nascimento</span><span>'+(fmtBirthdate(c.data_nascimento)||'--')+'</span></div>';
-    html+='</div>';
-    html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)"><button class="btn btn-g btn-sm" onclick="openEditCadastro(&quot;'+c.id+'&quot;)">✏ Editar</button></div>';
-    html+='</div>';
-  });
-  grid.innerHTML=html;
-}
-
-function openAddCadastro(){
-  cadEditId=null;
-  setText('cad-modal-title','Novo Cadastro');
-  $id('cad-nome').value='';
-  $id('cad-sexo').value='';
-  $id('cad-telefone').value='';
-  $id('cad-email').value='';
-  $id('cad-tel-emerg').value='';
-  $id('cad-nascimento').value='';
-  $id('cad-obs').value='';
-  $id('cad-del-btn').style.display='none';
-  $id('cad-modal').classList.add('show');
-}
-
-function openEditCadastro(id){
-  var c=null;
-  for(var i=0;i<cadastrosCache.length;i++){ if(cadastrosCache[i].id===id){c=cadastrosCache[i];break;} }
-  if(!c) return;
-  cadEditId=id;
-  setText('cad-modal-title','Editar Cadastro — '+c.nome);
-  $id('cad-nome').value=c.nome||'';
-  $id('cad-sexo').value=c.sexo||'';
-  $id('cad-telefone').value=c.telefone||'';
-  $id('cad-email').value=c.email_pessoal||'';
-  $id('cad-tel-emerg').value=c.telefone_emergencia||'';
-  $id('cad-nascimento').value=c.data_nascimento||'';
-  $id('cad-obs').value=c.obs||'';
-  $id('cad-del-btn').style.display='';
-  $id('cad-modal').classList.add('show');
-}
-
-function closeCadastroModal(){
-  $id('cad-modal').classList.remove('show');
-  cadEditId=null;
-}
-
-function saveCadastro(){
-  var nome=$id('cad-nome').value.trim();
-  if(!nome){ toast('Informe o nome','s'); return; }
-  if(!supabase||!currentUser){ toast('Sem conexão com o banco','s'); return; }
-
-  var row={
-    nome:nome,
-    sexo:$id('cad-sexo').value,
-    telefone:$id('cad-telefone').value.trim(),
-    email_pessoal:$id('cad-email').value.trim(),
-    telefone_emergencia:$id('cad-tel-emerg').value.trim(),
-    data_nascimento:$id('cad-nascimento').value||null,
-    obs:$id('cad-obs').value.trim(),
-    updated_at:new Date().toISOString()
-  };
-
-  var btn=$id('cad-save-btn'); if(btn){btn.disabled=true;btn.textContent='Salvando...';}
-
-  var req;
-  if(cadEditId){
-    req=supabase.from('cadastros').update(row).eq('id',cadEditId);
-  } else {
-    row.id=uid();
-    row.created_by=currentUser.id;
-    row.created_at=new Date().toISOString();
-    req=supabase.from('cadastros').insert(row);
-  }
-  req.then(function(res){
-    if(btn){btn.disabled=false;btn.textContent='Salvar';}
-    if(res.error){ toast('Erro ao salvar: '+res.error.message,'s'); return; }
-    closeCadastroModal();
-    toast(cadEditId?'Cadastro atualizado':'Cadastro registrado','g');
-    renderCadastros();
-  });
-}
-
-function deleteCadastroFromModal(){
-  if(!cadEditId) return;
-  if(!confirm('Excluir este cadastro permanentemente?')) return;
-  supabase.from('cadastros').delete().eq('id',cadEditId).then(function(res){
-    if(res.error){ toast('Erro ao excluir: '+res.error.message,'s'); return; }
-    closeCadastroModal();
-    toast('Cadastro excluído','g');
-    renderCadastros();
-  });
-}
-
-// ── AVISO DE ANIVERSARIANTES NA MESA (restrito: gestor/diretor) ───────
-function renderMesaBdayAlert(){
-  var box=$id('mesa-bday-alert'); if(!box) return;
-  var role=getRole();
-  if(role!=='gestor'&&role!=='diretor'){ box.style.display='none'; return; }
-  loadCadastros(function(){
-    var upcoming=cadastrosCache.map(function(c){
-      return {nome:c.nome, dias:daysUntilBirthday(c.data_nascimento)};
-    }).filter(function(x){ return x.dias!==null && x.dias<=7; })
-      .sort(function(a,b){ return a.dias-b.dias; });
-    if(!upcoming.length){ box.style.display='none'; box.innerHTML=''; return; }
-    var items=upcoming.map(function(x){
-      return x.dias===0 ? '🎉 <b>'+esc(x.nome)+'</b> — hoje!' : '🎂 <b>'+esc(x.nome)+'</b> — em '+x.dias+(x.dias===1?' dia':' dias');
-    }).join(' &nbsp;·&nbsp; ');
-    var hasToday=upcoming.some(function(x){return x.dias===0;});
-    box.innerHTML='<div class="bday-banner '+(hasToday?'today':'soon')+'" style="border-radius:var(--r);text-align:left;padding:.65rem .9rem">'+items+'</div>';
-    box.style.display='';
-  });
 }
 
 
@@ -6646,9 +6004,6 @@ function updateAtEmolPreview(){
   var bd=$id('btn-demo'),br=$id('btn-real');
   if(bd){bd.className='acct-btn'+(curAccount==='demo'?' demo-on':'');}
   if(br){br.className='acct-btn'+(curAccount==='real'?' real-on':'');}
-  var bdm=$id('btn-demo-m'),brm=$id('btn-real-m');
-  if(bdm){bdm.className='acct-btn'+(curAccount==='demo'?' demo-on':'');}
-  if(brm){brm.className='acct-btn'+(curAccount==='real'?' real-on':'');}
 })();
 // Migrate legacy dt_cfg to per-account format (one-time)
 (function(){
