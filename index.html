@@ -1203,16 +1203,28 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 
 <!-- MODAL NOVO CADASTRO -->
 <div class="mbk" id="add-cadastro-modal">
-  <div class="mdl" style="max-width:500px">
+  <div class="mdl" style="max-width:560px;max-height:90vh;overflow-y:auto">
     <div class="mdl-title" id="cad-modal-title">Novo Cadastro</div>
     <input type="hidden" id="cad-edit-id">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-      <div class="fg" style="grid-column:1/-1"><label>Nome completo</label><input type="text" id="cad-nome" placeholder="ex: Lucas Silva" maxlength="60"></div>
+      <!-- Dados pessoais -->
+      <div class="fg" style="grid-column:1/-1"><label>Nome completo</label><input type="text" id="cad-nome" placeholder="ex: Lucas Silva" maxlength="80"></div>
+      <div class="fg"><label>Função</label><select id="cad-role"><option value="Trader">Trader</option><option value="Gestor">Gestor</option><option value="Diretor">Diretor</option><option value="Outro">Outro</option></select></div>
       <div class="fg"><label>Sexo</label><select id="cad-sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select></div>
       <div class="fg"><label>Data de nascimento</label><input type="date" id="cad-nasc"></div>
+      <div class="fg"><label>CPF</label><input type="text" id="cad-cpf" placeholder="000.000.000-00" maxlength="14"></div>
+      <div class="fg"><label>RG</label><input type="text" id="cad-rg" placeholder="00.000.000-0" maxlength="20"></div>
       <div class="fg"><label>Telefone</label><input type="text" id="cad-tel" placeholder="ex: (17) 99999-9999" maxlength="20"></div>
-      <div class="fg"><label>Email pessoal</label><input type="email" id="cad-email" placeholder="ex: lucas@email.com" maxlength="80"></div>
+      <div class="fg"><label>Email</label><input type="email" id="cad-email" placeholder="ex: lucas@email.com" maxlength="80"></div>
       <div class="fg" style="grid-column:1/-1"><label>Telefone de emergência</label><input type="text" id="cad-tel-emerg" placeholder="ex: (17) 98888-8888 — Maria (mãe)" maxlength="80"></div>
+      <!-- Dados bancários -->
+      <div style="grid-column:1/-1;font-family:var(--mono);font-size:.6rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;padding-top:.25rem;border-top:1px solid var(--b2)">Dados Bancários</div>
+      <div class="fg" style="grid-column:1/-1"><label>Banco</label><input type="text" id="cad-banco" placeholder="ex: Itaú, Bradesco, Nubank…" maxlength="60"></div>
+      <div class="fg"><label>Agência</label><input type="text" id="cad-agencia" placeholder="ex: 0001" maxlength="20"></div>
+      <div class="fg"><label>Conta</label><input type="text" id="cad-conta" placeholder="ex: 12345-6" maxlength="30"></div>
+      <div class="fg" style="grid-column:1/-1"><label>Chave PIX</label><input type="text" id="cad-pix" placeholder="CPF, e-mail, telefone ou chave aleatória" maxlength="100"></div>
+      <!-- Observações -->
+      <div class="fg" style="grid-column:1/-1"><label>Observações</label><textarea id="cad-obs" rows="3" placeholder="Anotações livres…" style="width:100%;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.45rem .65rem;color:var(--tx);font-family:var(--mono);font-size:.75rem;resize:vertical"></textarea></div>
     </div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem">
       <button class="btn" onclick="closeAddCadastroModal()">Cancelar</button>
@@ -4669,6 +4681,8 @@ function onAuthSuccess(){
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
       // Load profiles for gestor/diretor view
       if(getRole()==='gestor'||getRole()==='diretor') loadAllProfiles(function(){});
+      // Carrega cadastros do Supabase
+      loadCadastrosFromDB(function(){ renderCadastros(); });
       _authBooting=false;
       initRoleSystem();
       toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
@@ -6394,65 +6408,211 @@ function renderOptions(){
 }
 
 // ═══════════════════════════════════════════════════════════
-// ABA CADASTROS
+// ABA CADASTROS — sincronizado com Supabase
 // ═══════════════════════════════════════════════════════════
-function loadCadastros(){
-  try{var r=localStorage.getItem('dt_cadastros');return r?JSON.parse(r):[];}catch(e){return[];}
+
+// Cache em memória dos cadastros (carregado do Supabase)
+var _cadastrosCache = [];
+
+// Converte linha do Supabase para objeto JS usado localmente
+// Estrutura real da tabela: id, owner_id, name, role_label, sexo,
+//   nascimento, cpf, rg, phone, email, tel_emerg, banco, agencia,
+//   conta, pix, obs, created_at, updated_at
+function _dbRowToCad(r){
+  return {
+    id: r.id,
+    nome: r.name||'',
+    roleLabel: r.role_label||'Trader',
+    sexo: r.sexo||'',
+    nasc: r.nascimento||'',  // DATE → "YYYY-MM-DD"
+    cpf: r.cpf||'',
+    rg: r.rg||'',
+    tel: r.phone||'',
+    email: r.email||'',
+    telEmerg: r.tel_emerg||'',
+    banco: r.banco||'',
+    agencia: r.agencia||'',
+    conta: r.conta||'',
+    pix: r.pix||'',
+    obs: r.obs||''
+  };
 }
-function saveCadastros(arr){localStorage.setItem('dt_cadastros',JSON.stringify(arr));}
+
+// Carrega cadastros do Supabase (ou localStorage como fallback)
+function loadCadastrosFromDB(callback){
+  if(!supabase||!currentUser){
+    // fallback: localStorage (dados antigos)
+    try{var r=localStorage.getItem('dt_cadastros');_cadastrosCache=r?JSON.parse(r):[];}catch(e){_cadastrosCache=[];}
+    if(callback)callback();
+    return;
+  }
+  supabase.from('cadastros').select('*')
+    .eq('owner_id',currentUser.id)
+    .order('name',{ascending:true})
+    .then(function(res){
+      if(res.error){
+        console.warn('loadCadastrosFromDB error:',res.error.message);
+        // fallback: localStorage
+        try{var r=localStorage.getItem('dt_cadastros');_cadastrosCache=r?JSON.parse(r):[];}catch(e){_cadastrosCache=[];}
+      } else {
+        _cadastrosCache=(res.data||[]).map(_dbRowToCad);
+        // Se tinha dados no localStorage (versão antiga), migra para o banco
+        try{
+          var old=JSON.parse(localStorage.getItem('dt_cadastros')||'[]');
+          if(old.length>0&&_cadastrosCache.length===0){
+            // Normaliza objeto antigo (campos podiam ter nomes diferentes)
+            old.forEach(function(c){
+              var norm={
+                id: c.id||uid(),
+                nome: c.nome||c.name||'',
+                roleLabel: c.roleLabel||'Trader',
+                sexo: c.sexo||'',
+                nasc: c.nasc||c.nascimento||'',
+                cpf: c.cpf||'',
+                rg: c.rg||'',
+                tel: c.tel||c.telefone||c.phone||'',
+                email: c.email||c.email_pessoal||'',
+                telEmerg: c.telEmerg||c.telefone_emergencia||c.tel_emerg||'',
+                banco: c.banco||'',
+                agencia: c.agencia||'',
+                conta: c.conta||'',
+                pix: c.pix||'',
+                obs: c.obs||''
+              };
+              _sbUpsertCadastro(norm,null);
+            });
+            localStorage.removeItem('dt_cadastros');
+            toast('Cadastros migrados para o banco de dados','g');
+            // Recarrega após migração
+            setTimeout(function(){loadCadastrosFromDB(callback);},800);
+            return;
+          }
+        }catch(e){}
+      }
+      if(callback)callback();
+    });
+}
+
+// Retorna cache local (compatibilidade com código legado)
+function loadCadastros(){ return _cadastrosCache; }
+
+// Upsert no Supabase (cria ou atualiza)
+// Colunas pós-migração: name, owner_id, role_label, sexo, nascimento(DATE),
+//   cpf, rg, phone, email, tel_emerg, banco, agencia, conta, pix, obs
+function _sbUpsertCadastro(obj, doneCallback){
+  if(!supabase||!currentUser){if(doneCallback)doneCallback();return;}
+  var row={
+    id: obj.id,
+    owner_id: currentUser.id,
+    name: obj.nome,
+    role_label: obj.roleLabel||'Trader',
+    sexo: obj.sexo||null,
+    nascimento: obj.nasc||null,   // string "YYYY-MM-DD" ou null
+    cpf: obj.cpf||null,
+    rg: obj.rg||null,
+    phone: obj.tel||null,
+    email: obj.email||null,
+    tel_emerg: obj.telEmerg||null,
+    banco: obj.banco||null,
+    agencia: obj.agencia||null,
+    conta: obj.conta||null,
+    pix: obj.pix||null,
+    obs: obj.obs||null
+  };
+  // nascimento vazio → null (campo DATE não aceita string vazia)
+  if(!row.nascimento)row.nascimento=null;
+  supabase.from('cadastros').upsert(row,{onConflict:'id'}).then(function(res){
+    if(res.error) console.warn('_sbUpsertCadastro error:',res.error.message);
+    if(doneCallback)doneCallback(res.error);
+  });
+}
+
+// Deleta no Supabase
+function _sbDeleteCadastro(id, doneCallback){
+  if(!supabase||!currentUser){if(doneCallback)doneCallback();return;}
+  supabase.from('cadastros').delete().eq('id',id).eq('owner_id',currentUser.id).then(function(res){
+    if(res.error) console.warn('_sbDeleteCadastro error:',res.error.message);
+    if(doneCallback)doneCallback(res.error);
+  });
+}
 
 function openAddCadastroModal(){
   var editId=$id('cad-edit-id');if(editId)editId.value='';
   var title=$id('cad-modal-title');if(title)title.textContent='Novo Cadastro';
-  ['cad-nome','cad-tel','cad-email','cad-tel-emerg'].forEach(function(id){var el=$id(id);if(el)el.value='';});
+  ['cad-nome','cad-cpf','cad-rg','cad-tel','cad-email','cad-tel-emerg','cad-banco','cad-agencia','cad-conta','cad-pix','cad-obs'].forEach(function(fid){var el=$id(fid);if(el)el.value='';});
   var nasc=$id('cad-nasc');if(nasc)nasc.value='';
   var sx=$id('cad-sexo');if(sx)sx.value='';
+  var rl=$id('cad-role');if(rl)rl.value='Trader';
   var m=$id('add-cadastro-modal');if(m)m.style.display='flex';
 }
 function closeAddCadastroModal(){var m=$id('add-cadastro-modal');if(m)m.style.display='none';}
 
 function editCadastro(id){
-  var arr=loadCadastros();
-  var c=arr.filter(function(x){return x.id===id;})[0];
+  var c=_cadastrosCache.filter(function(x){return x.id===id;})[0];
   if(!c)return;
   var editId=$id('cad-edit-id');if(editId)editId.value=id;
   var title=$id('cad-modal-title');if(title)title.textContent='Editar Cadastro';
   var nome=$id('cad-nome');if(nome)nome.value=c.nome||'';
+  var rl=$id('cad-role');if(rl)rl.value=c.roleLabel||'Trader';
   var sx=$id('cad-sexo');if(sx)sx.value=c.sexo||'';
   var nasc=$id('cad-nasc');if(nasc)nasc.value=c.nasc||'';
+  var cpf=$id('cad-cpf');if(cpf)cpf.value=c.cpf||'';
+  var rg=$id('cad-rg');if(rg)rg.value=c.rg||'';
   var tel=$id('cad-tel');if(tel)tel.value=c.tel||'';
   var email=$id('cad-email');if(email)email.value=c.email||'';
   var emerg=$id('cad-tel-emerg');if(emerg)emerg.value=c.telEmerg||'';
+  var banco=$id('cad-banco');if(banco)banco.value=c.banco||'';
+  var ag=$id('cad-agencia');if(ag)ag.value=c.agencia||'';
+  var ct=$id('cad-conta');if(ct)ct.value=c.conta||'';
+  var pix=$id('cad-pix');if(pix)pix.value=c.pix||'';
+  var obs=$id('cad-obs');if(obs)obs.value=c.obs||'';
   var m=$id('add-cadastro-modal');if(m)m.style.display='flex';
 }
 
 function saveCadastro(){
   var nome=($id('cad-nome')||{}).value||'';
   if(!nome){toast('Informe o nome','s');return;}
-  var arr=loadCadastros();
   var editId=($id('cad-edit-id')||{}).value||'';
   var obj={
     id:editId||uid(),
     nome:nome,
+    roleLabel:($id('cad-role')||{}).value||'Trader',
     sexo:($id('cad-sexo')||{}).value||'',
     nasc:($id('cad-nasc')||{}).value||'',
+    cpf:($id('cad-cpf')||{}).value||'',
+    rg:($id('cad-rg')||{}).value||'',
     tel:($id('cad-tel')||{}).value||'',
     email:($id('cad-email')||{}).value||'',
-    telEmerg:($id('cad-tel-emerg')||{}).value||''
+    telEmerg:($id('cad-tel-emerg')||{}).value||'',
+    banco:($id('cad-banco')||{}).value||'',
+    agencia:($id('cad-agencia')||{}).value||'',
+    conta:($id('cad-conta')||{}).value||'',
+    pix:($id('cad-pix')||{}).value||'',
+    obs:($id('cad-obs')||{}).value||''
   };
-  if(editId){arr=arr.map(function(x){return x.id===editId?obj:x;});}
-  else{arr.push(obj);}
-  saveCadastros(arr);
+  // Atualiza cache local imediatamente
+  if(editId){
+    _cadastrosCache=_cadastrosCache.map(function(x){return x.id===editId?obj:x;});
+  } else {
+    _cadastrosCache.push(obj);
+  }
   closeAddCadastroModal();
   renderCadastros();
-  toast('Cadastro salvo','g');
+  // Persiste no Supabase em background
+  _sbUpsertCadastro(obj,function(err){
+    if(err){toast('Erro ao salvar no banco','s');}
+    else{toast('Cadastro salvo','g');}
+  });
 }
 
 function deleteCadastro(id){
   if(!confirm('Remover este cadastro?'))return;
-  saveCadastros(loadCadastros().filter(function(x){return x.id!==id;}));
+  _cadastrosCache=_cadastrosCache.filter(function(x){return x.id!==id;});
   renderCadastros();
-  toast('Cadastro removido');
+  _sbDeleteCadastro(id,function(err){
+    if(err){toast('Erro ao remover do banco','s');}
+    else{toast('Cadastro removido');}
+  });
 }
 
 function renderCadastros(){
@@ -6477,7 +6637,6 @@ function renderCadastros(){
           aniv='<div style="font-family:var(--mono);font-size:.6rem;font-weight:700;color:var(--gain);margin-bottom:.35rem">🎂 Aniversário hoje!</div>';
           borderCol='var(--gain)';
         } else {
-          // Dias até aniversário
           var anoAtual=parseInt(todayParts[0]);
           var proxAniv=new Date(anoAtual,parseInt(mesNasc)-1,parseInt(diaNasc));
           if(proxAniv<new Date(todayStr))proxAniv=new Date(anoAtual+1,parseInt(mesNasc)-1,parseInt(diaNasc));
@@ -6491,13 +6650,25 @@ function renderCadastros(){
     }
     var nascFmt=c.nasc?c.nasc.split('-').reverse().join('/'):'—';
     var sx=c.sexo==='M'?'♂':c.sexo==='F'?'♀':'';
+    var roleTag=c.roleLabel&&c.roleLabel!=='Trader'?'<span style="font-family:var(--mono);font-size:.58rem;background:var(--s3);border-radius:3px;padding:.1rem .35rem;color:var(--acc);margin-left:.3rem">'+c.roleLabel+'</span>':'';
+    // Dados bancários (só mostra se preenchido)
+    var bancoDados='';
+    if(c.banco||c.pix){
+      bancoDados='<div style="margin-top:.25rem;padding-top:.25rem;border-top:1px solid var(--b2)">';
+      if(c.banco)bancoDados+='<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">Banco: <span style="color:var(--tx2)">'+c.banco+(c.agencia?' | Ag: '+c.agencia:'')+(c.conta?' | Cc: '+c.conta:'')+'</span></div>';
+      if(c.pix)bancoDados+='<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">PIX: <span style="color:var(--teal)">'+c.pix+'</span></div>';
+      bancoDados+='</div>';
+    }
     return'<div style="background:var(--s2);border:1px solid '+borderCol+';border-radius:var(--r2);padding:1rem;display:flex;flex-direction:column;gap:.4rem">'
       +aniv
-      +'<div style="font-family:var(--sans);font-size:.88rem;font-weight:700;color:var(--tx)">'+c.nome+' <span style="font-size:.75rem;color:var(--tx3)">'+sx+'</span></div>'
+      +'<div style="font-family:var(--sans);font-size:.88rem;font-weight:700;color:var(--tx)">'+c.nome+' <span style="font-size:.75rem;color:var(--tx3)">'+sx+'</span>'+roleTag+'</div>'
+      +(c.cpf?'<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">CPF: <span style="color:var(--tx2)">'+c.cpf+'</span></div>':'')
       +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Nascimento: <span style="color:var(--tx2)">'+nascFmt+'</span></div>'
-      +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Telefone: <span style="color:var(--tx2)">'+( c.tel||'—')+'</span></div>'
+      +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Telefone: <span style="color:var(--tx2)">'+(c.tel||'—')+'</span></div>'
       +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Email: <span style="color:var(--tx2)">'+(c.email||'—')+'</span></div>'
-      +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Emergência: <span style="color:var(--tx2)">'+(c.telEmerg||'—')+'</span></div>'
+      +(c.telEmerg?'<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">Emergência: <span style="color:var(--tx2)">'+c.telEmerg+'</span></div>':'')
+      +bancoDados
+      +(c.obs?'<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3);font-style:italic">'+c.obs+'</div>':'')
       +'<div style="display:flex;gap:.4rem;margin-top:.5rem">'
       +'<button class="btn btn-sm btn-g" onclick="editCadastro(\''+c.id+'\')">✏ Editar</button>'
       +'<button class="btn btn-sm btn-del" onclick="deleteCadastro(\''+c.id+'\')">✕</button>'
