@@ -40,6 +40,11 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear
 @keyframes ap{0%,100%{opacity:1}50%{opacity:.7}}
 #root{position:relative;z-index:1;display:flex;min-height:100vh}
 #sb{width:222px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:hidden}
+#sb-nav{flex:1;overflow-y:auto;overflow-x:hidden}
+#sb-nav::-webkit-scrollbar{width:3px}
+#sb-nav::-webkit-scrollbar-track{background:transparent}
+#sb-nav::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+#sb-nav::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
 .sb-logo{padding:1.4rem 1.2rem .9rem;border-bottom:1px solid var(--b1)}
 .sb-name{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:.08em}
 .sb-tag{font-family:var(--mono);font-size:.58rem;color:var(--acc);letter-spacing:.14em;margin-top:3px}
@@ -451,6 +456,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-g" onclick="doLogout()" style="font-size:.55rem;padding:.2rem .5rem;line-height:1.2">Sair</button>
     </div>
   </div>
+  <div id="sb-nav">
   <div class="sb-sec">Operacional</div>
   <div class="sb-item on" id="n-today"     onclick="nav('today')"><span class="sb-icon">⚡</span>Hoje</div>
   <div class="sb-item"    id="n-history"   onclick="nav('history')"><span class="sb-icon">📋</span>Histórico</div>
@@ -463,10 +469,13 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-diario"    onclick="nav('diario')"><span class="sb-icon">📓</span>Diário</div>
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
   <div class="sb-item"    id="n-news"      onclick="nav('news')"><span class="sb-icon">📰</span>Notícias</div>
-
+  <div class="sb-sec">Restrito</div>
+  <div class="sb-item"    id="n-options"   onclick="nav('options')"  style="display:none"><span class="sb-icon">📄</span>Opções</div>
+  <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')" style="display:none"><span class="sb-icon">🪪</span>Cadastros</div>
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
+  </div><!-- /sb-nav -->
   <div class="sb-bot">
     <div class="acct-switch">
       <button class="acct-btn demo-on" id="btn-demo" onclick="setAccount('demo')">Demo</button>
@@ -887,7 +896,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <div class="pg-sub">Progresso individual mensal · Metas trimestrais e anuais consolidadas</div>
     </div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="nav('config')">⚙ Configurar Metas</button>
+      <button class="btn btn-g btn-sm" onclick="openMetasConfigModal()">⚙ Configurar Metas</button>
     </div>
   </div>
 
@@ -952,6 +961,44 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <button class="ptab"    data-rp="today" onclick="setRP('today')">Hoje</button>
   </div>
   <div id="rank-content"></div>
+</div>
+
+<!-- MODAL CONFIGURAR METAS -->
+<div id="metas-config-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.65);align-items:center;justify-content:center">
+  <div style="background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);width:min(560px,95vw);max-height:90vh;overflow-y:auto;padding:1.5rem;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <div>
+        <div style="font-family:var(--sans);font-size:1rem;font-weight:700">⚙ Configurar Metas</div>
+        <div style="font-family:var(--mono);font-size:.6rem;color:var(--tx3);margin-top:2px">Conta: <span id="cfg-metas-badge" class="acct-badge demo">DEMO</span></div>
+      </div>
+      <button onclick="closeMetasConfigModal()" style="background:none;border:none;color:var(--tx3);font-size:1.3rem;cursor:pointer;line-height:1">&#x2715;</button>
+    </div>
+
+    <!-- METAS MENSAIS INDIVIDUAIS -->
+    <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:.75rem">Meta Mensal Individual (R$)</div>
+    <div id="cfg-metas-mensais" style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .75rem;margin-bottom:1.25rem"></div>
+
+    <!-- METAS TRIMESTRAIS -->
+    <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:.75rem;margin-top:.5rem;border-top:1px solid var(--b1);padding-top:1rem">Meta Trimestral Consolidada (R$)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem .75rem;margin-bottom:1.25rem">
+      <div class="fg"><label>Básico</label><input type="number" id="cfg-trim-basic" step="1000" min="0" placeholder="ex: 30000"></div>
+      <div class="fg"><label>Intermediário</label><input type="number" id="cfg-trim-inter" step="1000" min="0" placeholder="ex: 50000"></div>
+      <div class="fg"><label>Institucional</label><input type="number" id="cfg-trim-inst" step="1000" min="0" placeholder="ex: 80000"></div>
+    </div>
+
+    <!-- METAS ANUAIS -->
+    <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:.75rem;border-top:1px solid var(--b1);padding-top:1rem">Meta Anual Consolidada (R$)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem .75rem;margin-bottom:1.5rem">
+      <div class="fg"><label>Básico</label><input type="number" id="cfg-anual-basic" step="5000" min="0" placeholder="ex: 120000"></div>
+      <div class="fg"><label>Intermediário</label><input type="number" id="cfg-anual-inter" step="5000" min="0" placeholder="ex: 200000"></div>
+      <div class="fg"><label>Institucional</label><input type="number" id="cfg-anual-inst" step="5000" min="0" placeholder="ex: 320000"></div>
+    </div>
+
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn" onclick="closeMetasConfigModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveConfigMetas()">💾 Salvar Metas</button>
+    </div>
+  </div>
 </div>
 
 <!-- EXPORTAR -->
@@ -3471,7 +3518,7 @@ function renderMesaTotalBanner(){
 
   var traderLiq=0, traderGains=0, traderStops=0, traderOps=0;
   traders.forEach(function(t){
-    var ops=getMesaOps(t,mesaPeriod);
+    var ops=getTOpsFiltered(t.id,mesaPeriod);
     ops.forEach(function(o){
       traderLiq+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);
       if(o.tipo==='GAIN') traderGains+=o.pts;
@@ -3939,9 +3986,31 @@ function curYearRange(){
 }
 // Get R$ result for a trader in a date range
 function traderResultR(tid, from, to){
-  var ops=loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
+  // CSV ops
+  var csvOps=loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
+  // Personal ops from linkedOpsCache (ops do banco pessoal do trader)
+  var traders=loadTraders();
+  var trader=traders.filter(function(t){return t.id===tid;})[0];
+  var personalOps=[];
+  if(trader&&trader.linkedUserId){
+    var cache=linkedOpsCache[trader.linkedUserId];
+    if(cache&&cache[curAccount]){
+      personalOps=cache[curAccount].filter(function(o){return o.date>=from&&o.date<=to;});
+    }
+  }
+  // Merge with dedup by date+time+tipo+pts
+  var seen={};
+  var merged=[];
+  csvOps.forEach(function(o){
+    var k=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
+    seen[k]=true;merged.push(o);
+  });
+  personalOps.forEach(function(o){
+    var k=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
+    if(!seen[k]){seen[k]=true;merged.push(o);}
+  });
   var r=0;
-  ops.forEach(function(o){r+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
+  merged.forEach(function(o){r+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
   return r;
 }
 // Get R$ result for director in a date range
@@ -3968,9 +4037,31 @@ function renderMetas(){
   var badge=$id('metas-acct-badge');
   if(badge){badge.textContent=curAccount.toUpperCase();badge.className='acct-badge '+curAccount;}
 
-  renderMetasMensal();
-  renderMetasTrimestral();
-  renderMetasAnual();
+  var role=getRole();
+  if((role==='gestor'||role==='diretor')&&supabase&&currentUser){
+    // Load personal ops of all linked traders before rendering
+    var traders=loadTraders();
+    loadLinkedTraderOps(traders, curAccount, function(){
+      renderMetasMensal();
+      renderMetasTrimestral();
+      renderMetasAnual();
+    });
+  } else {
+    renderMetasMensal();
+    renderMetasTrimestral();
+    renderMetasAnual();
+  }
+}
+
+// ── MODAL CONFIGURAR METAS ────────────────────────────────────────────
+function openMetasConfigModal(){
+  renderConfigMetas();
+  var m=$id('metas-config-modal');
+  if(m)m.style.display='flex';
+}
+function closeMetasConfigModal(){
+  var m=$id('metas-config-modal');
+  if(m)m.style.display='none';
 }
 
 // ── MENSAL ────────────────────────────────────────────────────────────
@@ -4326,6 +4417,7 @@ function saveConfigMetas(){
   };
   saveMetas(metas);
   toast('Metas salvas','g');
+  closeMetasConfigModal();
   if(curPage==='metas')renderMetas();
   sbPushGoals(metas, mensais, curAccount);
 }
@@ -5258,17 +5350,17 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news'],
+  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
   viewer:  ['news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news'],
+  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
   viewer:  ['news']
 };
 
@@ -5284,7 +5376,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
