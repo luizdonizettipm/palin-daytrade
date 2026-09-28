@@ -40,6 +40,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear
 @keyframes ap{0%,100%{opacity:1}50%{opacity:.7}}
 #root{position:relative;z-index:1;display:flex;min-height:100vh}
 #sb{width:222px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:hidden}
+.sb-nav{flex:1 1 auto;overflow-y:auto;min-height:0;scrollbar-width:thin}
+.sb-nav::-webkit-scrollbar{width:5px}
+.sb-nav::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 .sb-logo{padding:1.4rem 1.2rem .9rem;border-bottom:1px solid var(--b1)}
 .sb-name{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:.08em}
 .sb-tag{font-family:var(--mono);font-size:.58rem;color:var(--acc);letter-spacing:.14em;margin-top:3px}
@@ -461,6 +464,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-g" onclick="doLogout()" style="font-size:.55rem;padding:.2rem .5rem;line-height:1.2">Sair</button>
     </div>
   </div>
+  <div class="sb-nav">
   <div class="sb-sec">Operacional</div>
   <div class="sb-item on" id="n-today"     onclick="nav('today')"><span class="sb-icon">⚡</span>Hoje</div>
   <div class="sb-item"    id="n-history"   onclick="nav('history')"><span class="sb-icon">📋</span>Histórico</div>
@@ -477,10 +481,15 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-sec">Restrito</div>
   <div class="sb-item"    id="n-opcoes"    onclick="nav('opcoes')"><span class="sb-icon">📑</span>Opções</div>
   <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')"><span class="sb-icon">🪪</span>Cadastros</div>
+  <div class="sb-item"    id="n-metodo2admin" onclick="nav('metodo2admin')"><span class="sb-icon">🧭</span>Método 2</div>
+
+  <div class="sb-sec" id="sb-sec-metodo2">Método 2</div>
+  <div class="sb-item"    id="n-metodo2"    onclick="nav('metodo2')"><span class="sb-icon">🚀</span>Minha Aprovação</div>
 
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
+  </div>
   <div class="sb-bot">
     <div class="acct-switch">
       <button class="acct-btn demo-on" id="btn-demo" onclick="setAccount('demo')">Demo</button>
@@ -826,6 +835,51 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 
   <div class="trader-grid" id="cad-grid"></div>
   <div id="cad-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum cadastro registrado ainda</div>
+</div>
+
+<!-- MÉTODO 2 — PARTICIPANTE (Minha Aprovação) -->
+<div class="pg" id="page-metodo2">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">🚀 Método 2 — Minha Aprovação</div>
+      <div class="pg-sub" id="m2-fase-sub">Acompanhe seu progresso até a liberação de conta real</div>
+    </div>
+    <span class="acct-badge" id="m2-status-badge">—</span>
+  </div>
+
+  <div id="m2-locked-banner" style="display:none;background:var(--stopdim);border:1px solid var(--stop);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.25rem;font-family:var(--mono);font-size:.78rem;color:var(--stop)"></div>
+
+  <div class="kgrid" id="m2-kpis"></div>
+
+  <div class="sec">
+    <div class="sec-title">Progresso da meta do período</div>
+    <div style="padding:0 .1rem">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem;font-family:var(--mono)">
+        <span style="font-size:.85rem;font-weight:700" id="m2-progress-val">—</span>
+        <span style="font-size:.7rem;color:var(--tx3)" id="m2-progress-pct">0%</span>
+      </div>
+      <div class="meta-bar-bg" style="height:12px"><div class="meta-bar-fill g" id="m2-progress-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="sec" style="margin-top:1.25rem">
+    <div class="sec-title">Regras do seu programa</div>
+    <div id="m2-rules" style="font-family:var(--mono);font-size:.72rem;color:var(--tx2);line-height:1.9"></div>
+  </div>
+</div>
+
+<!-- MÉTODO 2 — ADMIN (restrito: Gestor) -->
+<div class="pg" id="page-metodo2admin">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">🧭 Método 2 — Gestão de Participantes</div>
+      <div class="pg-sub">Aprovação, acompanhamento e parâmetros por participante</div>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="openAddMetodo2Participant()">+ Novo Participante</button>
+  </div>
+
+  <div class="trader-grid" id="m2a-grid"></div>
+  <div id="m2a-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum participante cadastrado ainda</div>
 </div>
 
 <!-- DIÁRIO -->
@@ -1278,6 +1332,48 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 
+<!-- MÉTODO 2 — PARTICIPANT MODAL (Admin) -->
+<div class="mbk" id="m2-modal">
+  <div class="mdl">
+    <div class="mdl-title" id="m2-modal-title">Novo Participante — Método 2</div>
+    <div style="display:flex;flex-direction:column;gap:.85rem">
+      <div class="fg">
+        <label>Participante (perfil com acesso Método 2)</label>
+        <select id="m2-user-sel"><option value="">— selecione —</option></select>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Capital inicial (R$)</label><input type="number" id="m2-capital" step="100" min="0" value="5000"></div>
+        <div class="fg"><label>Meta do período (%)</label><input type="number" id="m2-meta-pct" step="0.5" min="0" value="10"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Stop diário (%)</label><input type="number" id="m2-stop-diario" step="0.5" min="0" value="5"></div>
+        <div class="fg"><label>Stop máximo (%)</label><input type="number" id="m2-stop-max" step="0.5" min="0" value="10"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Prazo do ciclo (dias)</label><input type="number" id="m2-prazo-dias" step="1" min="1" value="30"></div>
+        <div class="fg"><label>Data de início</label><input type="date" id="m2-data-inicio"></div>
+      </div>
+      <div class="frow">
+        <div class="fg" style="flex:1"><label>Status</label>
+          <select id="m2-status">
+            <option value="simulador">Simulador (Demo)</option>
+            <option value="avaliacao">Em avaliação (Demo)</option>
+            <option value="aprovado">Aprovado (Conta Real)</option>
+            <option value="eliminado">Eliminado</option>
+          </select>
+        </div>
+        <div class="fg" style="flex:1"><label>Fase / rótulo</label><input type="text" id="m2-fase-label" placeholder="ex: Fase 1 — Simulador" maxlength="60"></div>
+      </div>
+      <div class="fg"><label>Observação (opcional)</label><input type="text" id="m2-obs" placeholder="notas internas" maxlength="160"></div>
+    </div>
+    <div class="mdl-foot">
+      <button class="btn btn-g" onclick="closeMetodo2Modal()">Cancelar</button>
+      <button class="btn btn-del" id="m2-del-btn" onclick="deleteMetodo2FromModal()" style="display:none;margin-right:auto">🗑 Excluir</button>
+      <button class="btn btn-t" id="m2-save-btn" onclick="saveMetodo2Participant()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- METAS CONFIG MODAL -->
 <div class="mbk" id="metas-config-modal">
   <div class="mdl mdl-wide">
@@ -1511,12 +1607,15 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-news"      onclick="nav('news');mnavSel(this)"><span class="mi">📰</span>News</button>
   <button class="mnbtn"    id="mn-opcoes"    onclick="nav('opcoes');mnavSel(this)"><span class="mi">📑</span>Opções</button>
   <button class="mnbtn"    id="mn-cadastros" onclick="nav('cadastros');mnavSel(this)"><span class="mi">🪪</span>Cadastros</button>
+  <button class="mnbtn"    id="mn-metodo2admin" onclick="nav('metodo2admin');mnavSel(this)"><span class="mi">🧭</span>Método 2</button>
+  <button class="mnbtn"    id="mn-metodo2" onclick="nav('metodo2');mnavSel(this)"><span class="mi">🚀</span>Aprovação</button>
   <button class="mnbtn"    id="mn-config"    onclick="nav('config');mnavSel(this)"><span class="mi">⚙️</span>Cfg</button>
 </div>
 <div id="toast"></div>
 <script>
 function $id(id){return document.getElementById(id);}
 function setText(id,v){var e=$id(id);if(e)e.textContent=v;}
+function setHtml(id,v){var e=$id(id);if(e)e.innerHTML=v;}
 function setBar(id,p){var e=$id(id);if(e)e.style.width=Math.min(Math.max(p,0),100)+'%';}
 function fmtN(n){return Number(n).toLocaleString('pt-BR');}
 function fmtR(n){return Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
@@ -1540,6 +1639,10 @@ var curAccount='demo'; // 'demo' | 'real'
 function acctKey(base){return base+'_'+curAccount;}
 function setAccount(acct){
   if(acct===curAccount)return;
+  if(getRole()==='metodo2' && !metodo2AccountAllowed(acct)){
+    toast('Você ainda não tem liberação para operar em conta '+(acct==='real'?'REAL':'DEMO')+'.','w');
+    return;
+  }
   curAccount=acct;
   localStorage.setItem('dt_last_account',acct);
   // Update switcher UI
@@ -1695,6 +1798,8 @@ function nav(page){
   else if(page==='config')renderConfig();
   else if(page==='opcoes')renderOpcoes();
   else if(page==='cadastros')renderCadastros();
+  else if(page==='metodo2')renderMetodo2();
+  else if(page==='metodo2admin')renderMetodo2Admin();
 }
 function mnavSel(el){document.querySelectorAll('.mnbtn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
 // TODAY
@@ -4647,8 +4752,8 @@ function onAuthSuccess(){
     // Update UI with user info
     var nameEl=$id('user-name-sb');
     var roleEl=$id('user-role-sb');
-    var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor',viewer:'Viewer'};
-    var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)',viewer:'var(--teal)'};
+    var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor',viewer:'Viewer',metodo2:'Método 2'};
+    var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)',viewer:'var(--teal)',metodo2:'var(--warn)'};
     var role=currentProfile.role||'trader';
     if(nameEl)nameEl.textContent=currentProfile.name||currentUser.email;
     if(roleEl){roleEl.textContent=roleLabels[role]||role;roleEl.style.color=roleColors[role]||'var(--tx3)';}
@@ -4663,6 +4768,15 @@ function onAuthSuccess(){
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
       // Load profiles for gestor view
       if(getRole()==='gestor') loadAllProfiles(function(){});
+      if(getRole()==='metodo2'){
+        loadMetodo2Own(function(){
+          applyMetodo2AccountGate();
+          _authBooting=false;
+          initRoleSystem();
+          toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
+        });
+        return;
+      }
       _authBooting=false;
       initRoleSystem();
       toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
@@ -5479,18 +5593,20 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','metodo2admin','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
   diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
-  viewer:  ['news']
+  viewer:  ['news'],
+  metodo2: ['today','history','diario','metodo2']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','metodo2admin','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
   diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
-  viewer:  ['news']
+  viewer:  ['news'],
+  metodo2: ['today','history','diario','metodo2']
 };
 
 function getRole(){
@@ -5505,7 +5621,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','metodo2','metodo2admin','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
@@ -5514,6 +5630,9 @@ function applyRoleUI(){
     var mel = $id('mn-'+id);
     if(mel) mel.style.display = allowedNav.indexOf(id)>=0 ? '' : 'none';
   });
+
+  var sbSecM2=$id('sb-sec-metodo2');
+  if(sbSecM2) sbSecM2.style.display = (role==='metodo2') ? '' : 'none';
 
   // Show/hide import profit button (traders and gestor see it, diretor doesn't)
   var importBtn = $id('btn-import-profit');
@@ -5534,13 +5653,14 @@ function applyRoleUI(){
   }
 
   // Role label colors
-  var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)',viewer:'var(--teal)'};
-  var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor',viewer:'Viewer'};
+  var roleColors={gestor:'var(--acc)',trader:'var(--gain)',diretor:'var(--purp)',viewer:'var(--teal)',metodo2:'var(--warn)'};
+  var roleLabels={gestor:'Gestor',trader:'Trader',diretor:'Diretor',viewer:'Viewer',metodo2:'Método 2'};
   var roleEl=$id('user-role-sb');
   if(roleEl){
     roleEl.textContent=roleLabels[role]||role;
     roleEl.style.color=roleColors[role]||'var(--tx3)';
   }
+  applyMetodo2AccountGate();
 }
 
 // Wrap nav() to check permissions
@@ -5562,7 +5682,7 @@ function initRoleSystem(){
   applyRoleUI();
   // Navigate to first allowed page for this role
   var role=getRole();
-  var firstPage=role==='diretor'?'mesa':role==='viewer'?'news':role==='trader'?'today':'today';
+  var firstPage=role==='diretor'?'mesa':role==='viewer'?'news':role==='metodo2'?'metodo2':role==='trader'?'today':'today';
   nav(firstPage);
 }
 
@@ -6422,6 +6542,360 @@ function deleteCadastroFromModal(){
     closeCadastroModal();
     toast('Cadastro excluído','g');
     renderCadastros();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MÉTODO 2 — nova metodologia (participantes isolados da Mesa tradicional)
+// ══════════════════════════════════════════════════════════════════════
+var metodo2Own = null;        // registro do próprio participante logado (role='metodo2')
+var metodo2AdminList = [];    // lista de participantes (visão do gestor)
+var metodo2AdminOpsCache = {}; // metodo2AdminOpsCache[userId][account_type] = [ops]
+var metodo2EditId = null;
+
+function metodo2AccountAllowed(acct){
+  if(!metodo2Own) return acct==='demo';
+  var st=metodo2Own.status||'simulador';
+  if(st==='eliminado') return false;
+  if(st==='aprovado') return acct==='real';
+  return acct==='demo'; // simulador | avaliacao
+}
+
+function applyMetodo2AccountGate(){
+  if(getRole()!=='metodo2') return;
+  var allowedDemo=metodo2AccountAllowed('demo'), allowedReal=metodo2AccountAllowed('real');
+  [['btn-demo','demo'],['btn-real','real'],['btn-demo-m','demo'],['btn-real-m','real']].forEach(function(pair){
+    var el=$id(pair[0]); if(!el) return;
+    var allowed = pair[1]==='demo'?allowedDemo:allowedReal;
+    el.style.opacity = allowed?'1':'.35';
+    el.style.cursor = allowed?'pointer':'not-allowed';
+    el.title = allowed?'':'Ainda sem liberação para esta conta';
+  });
+  if(!metodo2AccountAllowed(curAccount)){
+    curAccount = allowedReal?'real':'demo';
+    var bd=$id('btn-demo'),br=$id('btn-real'),bdm=$id('btn-demo-m'),brm=$id('btn-real-m');
+    if(bd)bd.className='acct-btn'+(curAccount==='demo'?' demo-on':'');
+    if(br)br.className='acct-btn'+(curAccount==='real'?' real-on':'');
+    if(bdm)bdm.className='acct-btn'+(curAccount==='demo'?' demo-on':'');
+    if(brm)brm.className='acct-btn'+(curAccount==='real'?' real-on':'');
+    loadCFG();
+  }
+}
+
+function loadMetodo2Own(callback){
+  if(!supabase||!currentUser){ if(callback)callback(); return; }
+  supabase.from('metodo2_participantes').select('*').eq('user_id',currentUser.id).maybeSingle().then(function(res){
+    metodo2Own = res.data || null;
+    if(callback) callback();
+  });
+}
+
+// Calcula progresso: soma resultado (R$) dos ops do período dentro da janela do ciclo
+function metodo2CalcProgress(p, ops){
+  var capitalIni=parseFloat(p.capital_inicial)||0;
+  var metaPct=parseFloat(p.meta_pct)||0;
+  var stopDiarioPct=parseFloat(p.stop_diario_pct)||0;
+  var stopMaxPct=parseFloat(p.stop_maximo_pct)||0;
+  var prazoDias=parseInt(p.prazo_dias)||30;
+  var dataInicio=p.data_inicio||today();
+
+  var d0=new Date(dataInicio+'T00:00:00');
+  var now=new Date(); now.setHours(0,0,0,0);
+  var diffDays=Math.floor((now-d0)/(1000*60*60*24));
+  var diasRestantes=Math.max(0,prazoDias-diffDays);
+
+  var fromStr=dataInicio, toStr=today();
+  var periodOps=(ops||[]).filter(function(o){return o.date>=fromStr&&o.date<=toStr;});
+  var resultado=0;
+  periodOps.forEach(function(o){ resultado += o.tipo==='GAIN'?(o.val||0):-(o.val||0); });
+
+  var capitalAtual=capitalIni+resultado;
+  var metaValor=capitalIni*metaPct/100;
+  var pct=metaValor>0?Math.max(0,Math.round(resultado/metaValor*100)):0;
+  var pisoR=capitalIni-(capitalIni*stopMaxPct/100);
+
+  // Resultado do dia atual, p/ checar stop diário
+  var todayOpsList=(ops||[]).filter(function(o){return o.date===today();});
+  var resultadoHoje=0;
+  todayOpsList.forEach(function(o){ resultadoHoje += o.tipo==='GAIN'?(o.val||0):-(o.val||0); });
+  var stopDiarioValor=capitalIni*stopDiarioPct/100;
+  var stopDiarioViolado = stopDiarioPct>0 && resultadoHoje <= -stopDiarioValor;
+  var stopMaximoViolado = stopMaxPct>0 && capitalAtual <= pisoR;
+  var metaAtingida = metaValor>0 && resultado>=metaValor;
+
+  return {
+    capitalIni:capitalIni, resultado:resultado, capitalAtual:capitalAtual,
+    metaValor:metaValor, pct:Math.min(pct,999), diasRestantes:diasRestantes, prazoDias:prazoDias,
+    pisoR:pisoR, stopDiarioValor:stopDiarioValor, resultadoHoje:resultadoHoje,
+    stopDiarioViolado:stopDiarioViolado, stopMaximoViolado:stopMaximoViolado, metaAtingida:metaAtingida
+  };
+}
+
+var statusLabels2={simulador:'Simulador',avaliacao:'Em avaliação',aprovado:'Conta Real',eliminado:'Eliminado'};
+var statusColors2={simulador:'var(--teal)',avaliacao:'var(--warn)',aprovado:'var(--gain)',eliminado:'var(--stop)'};
+
+// ── Página do próprio participante ("Minha Aprovação") ────────────────
+function renderMetodo2(){
+  loadMetodo2Own(function(){
+    applyMetodo2AccountGate();
+    var badge=$id('m2-status-badge');
+    if(!metodo2Own){
+      if(badge){badge.textContent='—';badge.className='acct-badge';}
+      setHtml('m2-kpis','<div style="font-family:var(--mono);font-size:.75rem;color:var(--tx3);padding:1rem">Seu cadastro no Método 2 ainda não foi configurado. Fale com o gestor.</div>');
+      setHtml('m2-rules','');
+      var lb=$id('m2-locked-banner'); if(lb) lb.style.display='none';
+      return;
+    }
+    var p=metodo2Own;
+    var acct=metodo2AccountAllowed('real')?'real':'demo';
+    var ops=JSON.parse(localStorage.getItem('dt_ops_'+acct)||'[]');
+    var c=metodo2CalcProgress(p,ops);
+
+    if(badge){
+      badge.textContent=(statusLabels2[p.status]||p.status).toUpperCase();
+      badge.style.background=(statusColors2[p.status]||'var(--tx3)')+'22';
+      badge.style.color=statusColors2[p.status]||'var(--tx3)';
+      badge.style.border='1px solid '+(statusColors2[p.status]||'var(--tx3)')+'44';
+    }
+    setText('m2-fase-sub', p.fase_label || ('Ciclo de '+c.prazoDias+' dias · '+(statusLabels2[p.status]||p.status)));
+
+    var lb=$id('m2-locked-banner');
+    if(p.status==='eliminado'){
+      lb.style.display='';
+      lb.innerHTML='❌ Você foi eliminado do programa Método 2 nesta rodada. Fale com o gestor sobre o período de reaplicação.';
+    } else if(c.stopMaximoViolado){
+      lb.style.display='';
+      lb.innerHTML='⚠ Stop máximo atingido — capital atual em '+fmtR(c.capitalAtual)+' (piso: '+fmtR(c.pisoR)+'). Aguarde orientação do gestor.';
+    } else if(c.stopDiarioViolado){
+      lb.style.display='';
+      lb.innerHTML='⚠ Stop diário atingido hoje ('+fmtR(c.resultadoHoje)+'). Encerre as operações do dia.';
+    } else if(c.diasRestantes<=0){
+      lb.style.display='';
+      lb.innerHTML='⏳ O prazo deste ciclo terminou. Aguarde avaliação do gestor.';
+    } else {
+      lb.style.display='none';
+    }
+
+    var kpis='';
+    kpis+='<div class="kcard ka"><div class="klbl">Capital inicial</div><div class="kval">'+fmtR(c.capitalIni)+'</div></div>';
+    kpis+='<div class="kcard '+(c.resultado>=0?'kg':'ks')+'"><div class="klbl">Resultado do ciclo</div><div class="kval">'+(c.resultado>=0?'+':'')+fmtR(c.resultado)+'</div></div>';
+    kpis+='<div class="kcard kt"><div class="klbl">Capital atual</div><div class="kval">'+fmtR(c.capitalAtual)+'</div></div>';
+    kpis+='<div class="kcard kw"><div class="klbl">Dias restantes</div><div class="kval">'+c.diasRestantes+'</div></div>';
+    setHtml('m2-kpis',kpis);
+
+    setText('m2-progress-val',(c.resultado>=0?'+':'')+fmtR(c.resultado)+' / '+fmtR(c.metaValor));
+    setText('m2-progress-pct',c.pct+'%');
+    var bar=$id('m2-progress-bar');
+    if(bar){
+      bar.style.width=Math.max(0,Math.min(c.pct,100))+'%';
+      bar.className='meta-bar-fill '+(c.metaAtingida?'g':c.pct>70?'a':'p');
+    }
+
+    var rules='';
+    rules+='<div>• Conta ativa no momento: <b style="color:var(--tx)">'+(acct==='real'?'CONTA REAL':'SIMULADOR (DEMO)')+'</b></div>';
+    rules+='<div>• Meta do ciclo: '+ (p.meta_pct||0) +'% do capital inicial ('+fmtR(c.metaValor)+')</div>';
+    rules+='<div>• Stop diário: '+(p.stop_diario_pct||0)+'% ('+fmtR(c.stopDiarioValor)+')</div>';
+    rules+='<div>• Stop máximo: '+(p.stop_maximo_pct||0)+'% — piso em '+fmtR(c.pisoR)+'</div>';
+    rules+='<div>• Prazo do ciclo: '+c.prazoDias+' dias (início em '+fmtBirthdate(p.data_inicio)+')</div>';
+    if(p.obs) rules+='<div>• Observação: '+esc(p.obs)+'</div>';
+    setHtml('m2-rules',rules);
+  });
+}
+
+// ── Página do gestor (lista + gestão de participantes) ────────────────
+function loadMetodo2Admin(callback){
+  if(!supabase){ if(callback)callback(); return; }
+  supabase.from('metodo2_participantes').select('*').order('created_at').then(function(res){
+    metodo2AdminList = res.data || [];
+    if(callback) callback();
+  });
+}
+
+function loadMetodo2AdminOps(list, callback){
+  if(!supabase || !list.length){ if(callback) callback(); return; }
+  var pending=0, done=function(){ pending--; if(pending<=0 && callback) callback(); };
+  list.forEach(function(p){
+    var acct = p.status==='aprovado' ? 'real' : 'demo';
+    if(metodo2AdminOpsCache[p.user_id] && metodo2AdminOpsCache[p.user_id][acct]){ return; }
+    pending++;
+    supabase.from('operations').select('*').eq('user_id',p.user_id).eq('account_type',acct).then(function(res){
+      if(!metodo2AdminOpsCache[p.user_id]) metodo2AdminOpsCache[p.user_id]={};
+      metodo2AdminOpsCache[p.user_id][acct]=(res.data||[]).map(function(r){
+        return{date:r.date,time:r.time,tipo:r.tipo,val:parseFloat(r.val||0)};
+      });
+      done();
+    });
+  });
+  if(pending===0 && callback) callback();
+}
+
+function renderMetodo2Admin(){
+  loadMetodo2Admin(function(){
+    loadMetodo2AdminOps(metodo2AdminList, function(){
+      renderMetodo2AdminGrid();
+    });
+  });
+}
+
+function renderMetodo2AdminGrid(){
+  var grid=$id('m2a-grid'), empty=$id('m2a-empty');
+  if(!grid) return;
+  if(!metodo2AdminList.length){
+    grid.innerHTML=''; if(empty) empty.style.display=''; return;
+  }
+  if(empty) empty.style.display='none';
+  var html='';
+  metodo2AdminList.forEach(function(p,idx){
+    var acct = p.status==='aprovado' ? 'real' : 'demo';
+    var ops=(metodo2AdminOpsCache[p.user_id]&&metodo2AdminOpsCache[p.user_id][acct])||[];
+    var c=metodo2CalcProgress(p,ops);
+    var tc=PALETTE[idx%PALETTE.length];
+    var sc=statusColors2[p.status]||'var(--tx3)';
+
+    html+='<div class="tcard">';
+    html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc+'22;color:'+tc+';border:1px solid '+tc+'44">'+esc((p.name||'?').slice(0,2).toUpperCase())+'</div><div><div class="tname">'+esc(p.name||'—')+'</div><div class="tops" style="color:'+sc+'">'+(statusLabels2[p.status]||p.status)+'</div></div></div>';
+    html+='<span class="acct-badge '+acct+'">'+acct.toUpperCase()+'</span></div>';
+    html+='<div class="tcard-body">';
+    html+='<div class="cad-row"><span class="cad-lbl">Capital inicial</span><span>'+fmtR(c.capitalIni)+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Resultado do ciclo</span><span class="'+(c.resultado>=0?'cg':'cs')+'">'+(c.resultado>=0?'+':'')+fmtR(c.resultado)+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Capital atual</span><span>'+fmtR(c.capitalAtual)+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Progresso da meta</span><span>'+c.pct+'%</span></div>';
+    html+='<div class="meta-bar-bg" style="margin:.4rem 0"><div class="meta-bar-fill '+(c.metaAtingida?'g':c.pct>70?'a':'p')+'" style="width:'+Math.max(0,Math.min(c.pct,100))+'%"></div></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Dias restantes</span><span>'+c.diasRestantes+' / '+c.prazoDias+'</span></div>';
+    if(c.stopMaximoViolado) html+='<div class="cad-row"><span class="cad-lbl">⚠ Stop máximo</span><span class="cs">Atingido</span></div>';
+    if(c.stopDiarioViolado) html+='<div class="cad-row"><span class="cad-lbl">⚠ Stop diário (hoje)</span><span class="cs">Atingido</span></div>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:.5rem;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1);flex-wrap:wrap">';
+    if(p.status!=='aprovado' && p.status!=='eliminado') html+='<button class="btn btn-t btn-sm" onclick="approveMetodo2(&quot;'+p.id+'&quot;)">✅ Aprovar p/ Real</button>';
+    if(p.status!=='eliminado') html+='<button class="btn btn-del btn-sm" onclick="eliminateMetodo2(&quot;'+p.id+'&quot;)">⛔ Eliminar</button>';
+    html+='<button class="btn btn-g btn-sm" onclick="openEditMetodo2Participant(&quot;'+p.id+'&quot;)">✏ Editar</button>';
+    html+='</div>';
+    html+='</div>';
+  });
+  grid.innerHTML=html;
+}
+
+function approveMetodo2(id){
+  if(!confirm('Aprovar este participante para operar em conta REAL agora? O ciclo será reiniciado.')) return;
+  supabase.from('metodo2_participantes').update({
+    status:'aprovado', data_inicio:today(), updated_at:new Date().toISOString()
+  }).eq('id',id).then(function(res){
+    if(res.error){ toast('Erro ao aprovar: '+res.error.message,'s'); return; }
+    metodo2AdminOpsCache={};
+    toast('Participante aprovado para conta real','g');
+    renderMetodo2Admin();
+  });
+}
+
+function eliminateMetodo2(id){
+  if(!confirm('Eliminar este participante do ciclo atual do Método 2?')) return;
+  supabase.from('metodo2_participantes').update({
+    status:'eliminado', updated_at:new Date().toISOString()
+  }).eq('id',id).then(function(res){
+    if(res.error){ toast('Erro ao eliminar: '+res.error.message,'s'); return; }
+    toast('Participante eliminado','w');
+    renderMetodo2Admin();
+  });
+}
+
+function openAddMetodo2Participant(){
+  metodo2EditId=null;
+  setText('m2-modal-title','Novo Participante — Método 2');
+  var sel=$id('m2-user-sel');
+  var existingIds=metodo2AdminList.map(function(p){return p.user_id;});
+  var candidates=gestorProfiles.filter(function(pr){return pr.role==='metodo2' && existingIds.indexOf(pr.id)===-1;});
+  var opts='<option value="">— selecione —</option>';
+  candidates.forEach(function(pr){ opts+='<option value="'+pr.id+'" data-name="'+esc(pr.name)+'">'+esc(pr.name)+'</option>'; });
+  if(sel) sel.innerHTML=opts;
+  if(sel) sel.disabled=false;
+  $id('m2-capital').value=5000;
+  $id('m2-meta-pct').value=10;
+  $id('m2-stop-diario').value=5;
+  $id('m2-stop-max').value=10;
+  $id('m2-prazo-dias').value=30;
+  $id('m2-data-inicio').value=today();
+  $id('m2-status').value='simulador';
+  $id('m2-fase-label').value='';
+  $id('m2-obs').value='';
+  $id('m2-del-btn').style.display='none';
+  $id('m2-modal').classList.add('show');
+}
+
+function openEditMetodo2Participant(id){
+  var p=null;
+  for(var i=0;i<metodo2AdminList.length;i++){ if(metodo2AdminList[i].id===id){p=metodo2AdminList[i];break;} }
+  if(!p) return;
+  metodo2EditId=id;
+  setText('m2-modal-title','Editar Participante — '+(p.name||''));
+  var sel=$id('m2-user-sel');
+  if(sel){ sel.innerHTML='<option value="'+p.user_id+'">'+esc(p.name||'')+'</option>'; sel.disabled=true; }
+  $id('m2-capital').value=p.capital_inicial||5000;
+  $id('m2-meta-pct').value=p.meta_pct||10;
+  $id('m2-stop-diario').value=p.stop_diario_pct||5;
+  $id('m2-stop-max').value=p.stop_maximo_pct||10;
+  $id('m2-prazo-dias').value=p.prazo_dias||30;
+  $id('m2-data-inicio').value=p.data_inicio||today();
+  $id('m2-status').value=p.status||'simulador';
+  $id('m2-fase-label').value=p.fase_label||'';
+  $id('m2-obs').value=p.obs||'';
+  $id('m2-del-btn').style.display='';
+  $id('m2-modal').classList.add('show');
+}
+
+function closeMetodo2Modal(){
+  $id('m2-modal').classList.remove('show');
+  metodo2EditId=null;
+}
+
+function saveMetodo2Participant(){
+  if(!supabase||!currentUser){ toast('Sem conexão com o banco','s'); return; }
+  var userId=$id('m2-user-sel').value;
+  var userName=$id('m2-user-sel').selectedOptions&&$id('m2-user-sel').selectedOptions[0]?$id('m2-user-sel').selectedOptions[0].textContent:'';
+  if(!metodo2EditId && !userId){ toast('Selecione o participante','s'); return; }
+
+  var row={
+    capital_inicial:parseFloat($id('m2-capital').value)||0,
+    meta_pct:parseFloat($id('m2-meta-pct').value)||0,
+    stop_diario_pct:parseFloat($id('m2-stop-diario').value)||0,
+    stop_maximo_pct:parseFloat($id('m2-stop-max').value)||0,
+    prazo_dias:parseInt($id('m2-prazo-dias').value)||30,
+    data_inicio:$id('m2-data-inicio').value||today(),
+    status:$id('m2-status').value,
+    fase_label:$id('m2-fase-label').value.trim(),
+    obs:$id('m2-obs').value.trim(),
+    updated_at:new Date().toISOString()
+  };
+
+  var btn=$id('m2-save-btn'); if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+  var req;
+  if(metodo2EditId){
+    req=supabase.from('metodo2_participantes').update(row).eq('id',metodo2EditId);
+  } else {
+    row.id=uid();
+    row.user_id=userId;
+    row.name=userName;
+    row.created_by=currentUser.id;
+    row.created_at=new Date().toISOString();
+    req=supabase.from('metodo2_participantes').insert(row);
+  }
+  req.then(function(res){
+    if(btn){btn.disabled=false;btn.textContent='Salvar';}
+    if(res.error){ toast('Erro ao salvar: '+res.error.message,'s'); return; }
+    metodo2AdminOpsCache={};
+    closeMetodo2Modal();
+    toast(metodo2EditId?'Participante atualizado':'Participante cadastrado','g');
+    renderMetodo2Admin();
+  });
+}
+
+function deleteMetodo2FromModal(){
+  if(!metodo2EditId) return;
+  if(!confirm('Excluir este participante do Método 2 permanentemente?')) return;
+  supabase.from('metodo2_participantes').delete().eq('id',metodo2EditId).then(function(res){
+    if(res.error){ toast('Erro ao excluir: '+res.error.message,'s'); return; }
+    closeMetodo2Modal();
+    toast('Participante excluído','g');
+    renderMetodo2Admin();
   });
 }
 
