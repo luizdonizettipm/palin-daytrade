@@ -6397,7 +6397,7 @@ var cadEditId = null;
 
 function loadCadastros(callback){
   if(!supabase||!currentUser){ cadastrosCache=[]; if(callback)callback(); return; }
-  supabase.from('cadastros').select('*').order('nome',{ascending:true})
+  supabase.from('cadastros').select('*').order('name',{ascending:true})
     .then(function(res){
       if(res.error){ console.warn('cadastros load error:',res.error.message); cadastrosCache=[]; }
       else cadastrosCache=res.data||[];
@@ -6450,11 +6450,11 @@ function renderCadastrosGrid(){
     } else if(isSoon){
       html+='<div class="bday-banner soon">🎂 Aniversário em '+dias+(dias===1?' dia':' dias')+'</div>';
     }
-    html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc+'22;color:'+tc+';border:1px solid '+tc+'44">'+esc((c.nome||'?').slice(0,2).toUpperCase())+'</div><div><div class="tname">'+esc(c.nome)+(isToday?' 🎈':'')+'</div><div class="tops">'+(sexoLabel[c.sexo]||'--')+'</div></div></div></div>';
+    html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc+'22;color:'+tc+';border:1px solid '+tc+'44">'+esc((c.name||'?').slice(0,2).toUpperCase())+'</div><div><div class="tname">'+esc(c.name)+(isToday?' 🎈':'')+'</div><div class="tops">'+(sexoLabel[c.sexo]||'--')+'</div></div></div></div>';
     html+='<div class="tcard-body">';
-    html+='<div class="cad-row"><span class="cad-lbl">Telefone</span><span>'+esc(c.telefone||'--')+'</span></div>';
-    html+='<div class="cad-row"><span class="cad-lbl">Email pessoal</span><span>'+esc(c.email_pessoal||'--')+'</span></div>';
-    html+='<div class="cad-row"><span class="cad-lbl">Tel. emergência</span><span>'+esc(c.telefone_emergencia||'--')+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Telefone</span><span>'+esc(c.phone||'--')+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Email pessoal</span><span>'+esc(c.email||'--')+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Tel. emergência</span><span>'+esc(c.tel_emerg||'--')+'</span></div>';
     html+='<div class="cad-row"><span class="cad-lbl">Nascimento</span><span>'+(fmtBirthdate(c.data_nascimento)||'--')+'</span></div>';
     html+='</div>';
     html+='<div style="display:flex;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1)"><button class="btn btn-g btn-sm" onclick="openEditCadastro(&quot;'+c.id+'&quot;)">✏ Editar</button></div>';
@@ -6482,12 +6482,12 @@ function openEditCadastro(id){
   for(var i=0;i<cadastrosCache.length;i++){ if(cadastrosCache[i].id===id){c=cadastrosCache[i];break;} }
   if(!c) return;
   cadEditId=id;
-  setText('cad-modal-title','Editar Cadastro — '+c.nome);
-  $id('cad-nome').value=c.nome||'';
+  setText('cad-modal-title','Editar Cadastro — '+c.name);
+  $id('cad-nome').value=c.name||'';
   $id('cad-sexo').value=c.sexo||'';
-  $id('cad-telefone').value=c.telefone||'';
-  $id('cad-email').value=c.email_pessoal||'';
-  $id('cad-tel-emerg').value=c.telefone_emergencia||'';
+  $id('cad-telefone').value=c.phone||'';
+  $id('cad-email').value=c.email||'';
+  $id('cad-tel-emerg').value=c.tel_emerg||'';
   $id('cad-nascimento').value=c.data_nascimento||'';
   $id('cad-obs').value=c.obs||'';
   $id('cad-del-btn').style.display='';
@@ -6505,11 +6505,11 @@ function saveCadastro(){
   if(!supabase||!currentUser){ toast('Sem conexão com o banco','s'); return; }
 
   var row={
-    nome:nome,
+    name:nome,
     sexo:$id('cad-sexo').value,
-    telefone:$id('cad-telefone').value.trim(),
-    email_pessoal:$id('cad-email').value.trim(),
-    telefone_emergencia:$id('cad-tel-emerg').value.trim(),
+    phone:$id('cad-telefone').value.trim(),
+    email:$id('cad-email').value.trim(),
+    tel_emerg:$id('cad-tel-emerg').value.trim(),
     data_nascimento:$id('cad-nascimento').value||null,
     obs:$id('cad-obs').value.trim(),
     updated_at:new Date().toISOString()
@@ -6522,7 +6522,7 @@ function saveCadastro(){
     req=supabase.from('cadastros').update(row).eq('id',cadEditId);
   } else {
     row.id=uid();
-    row.created_by=currentUser.id;
+    row.owner_id=currentUser.id;
     row.created_at=new Date().toISOString();
     req=supabase.from('cadastros').insert(row);
   }
@@ -6907,7 +6907,7 @@ function renderMesaBdayAlert(){
   if(role!=='gestor'&&role!=='diretor'){ box.style.display='none'; return; }
   loadCadastros(function(){
     var upcoming=cadastrosCache.map(function(c){
-      return {nome:c.nome, dias:daysUntilBirthday(c.data_nascimento)};
+      return {nome:c.name, dias:daysUntilBirthday(c.data_nascimento)};
     }).filter(function(x){ return x.dias!==null && x.dias<=7; })
       .sort(function(a,b){ return a.dias-b.dias; });
     if(!upcoming.length){ box.style.display='none'; box.innerHTML=''; return; }
