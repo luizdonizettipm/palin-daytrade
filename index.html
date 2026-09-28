@@ -4764,7 +4764,8 @@ function onAuthSuccess(){
     console.log('onAuthSuccess: user', currentUser.id, 'profile', currentProfile);
     // Load user data from Supabase into localStorage, then boot
     loadAllUserData(function(){
-      seedDemo();loadCFG();onTipo();
+      if(getRole()!=='metodo2') seedDemo();
+      loadCFG();onTipo();
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
       // Load profiles for gestor view
       if(getRole()==='gestor') loadAllProfiles(function(){});
@@ -5597,7 +5598,7 @@ var ROLE_PAGES = {
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
   diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
   viewer:  ['news'],
-  metodo2: ['today','history','diario','metodo2']
+  metodo2: ['today','history','pnl','metodo2']
 };
 
 // Nav items to show per role
@@ -5606,7 +5607,7 @@ var ROLE_NAV = {
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
   diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
   viewer:  ['news'],
-  metodo2: ['today','history','diario','metodo2']
+  metodo2: ['today','history','pnl','metodo2']
 };
 
 function getRole(){
