@@ -40,11 +40,6 @@ body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear
 @keyframes ap{0%,100%{opacity:1}50%{opacity:.7}}
 #root{position:relative;z-index:1;display:flex;min-height:100vh}
 #sb{width:222px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:hidden}
-#sb-nav{flex:1;overflow-y:auto;overflow-x:hidden}
-#sb-nav::-webkit-scrollbar{width:3px}
-#sb-nav::-webkit-scrollbar-track{background:transparent}
-#sb-nav::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
-#sb-nav::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
 .sb-logo{padding:1.4rem 1.2rem .9rem;border-bottom:1px solid var(--b1)}
 .sb-name{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:.08em}
 .sb-tag{font-family:var(--mono);font-size:.58rem;color:var(--acc);letter-spacing:.14em;margin-top:3px}
@@ -456,7 +451,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-g" onclick="doLogout()" style="font-size:.55rem;padding:.2rem .5rem;line-height:1.2">Sair</button>
     </div>
   </div>
-  <div id="sb-nav">
   <div class="sb-sec">Operacional</div>
   <div class="sb-item on" id="n-today"     onclick="nav('today')"><span class="sb-icon">⚡</span>Hoje</div>
   <div class="sb-item"    id="n-history"   onclick="nav('history')"><span class="sb-icon">📋</span>Histórico</div>
@@ -469,13 +463,10 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-diario"    onclick="nav('diario')"><span class="sb-icon">📓</span>Diário</div>
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
   <div class="sb-item"    id="n-news"      onclick="nav('news')"><span class="sb-icon">📰</span>Notícias</div>
-  <div class="sb-sec">Restrito</div>
-  <div class="sb-item"    id="n-options"   onclick="nav('options')"  style="display:none"><span class="sb-icon">📄</span>Opções</div>
-  <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')" style="display:none"><span class="sb-icon">🪪</span>Cadastros</div>
+
   <div class="sb-sec">Sistema</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
-  </div><!-- /sb-nav -->
   <div class="sb-bot">
     <div class="acct-switch">
       <button class="acct-btn demo-on" id="btn-demo" onclick="setAccount('demo')">Demo</button>
@@ -896,7 +887,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <div class="pg-sub">Progresso individual mensal · Metas trimestrais e anuais consolidadas</div>
     </div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="openMetasConfigModal()">⚙ Configurar Metas</button>
+      <button class="btn btn-g btn-sm" onclick="nav('config')">⚙ Configurar Metas</button>
     </div>
   </div>
 
@@ -961,113 +952,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <button class="ptab"    data-rp="today" onclick="setRP('today')">Hoje</button>
   </div>
   <div id="rank-content"></div>
-</div>
-
-<!-- MODAL CONFIGURAR METAS -->
-<div id="metas-config-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.65);align-items:center;justify-content:center">
-  <div style="background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);width:min(560px,95vw);max-height:90vh;overflow-y:auto;padding:1.5rem;position:relative">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
-      <div>
-        <div style="font-family:var(--sans);font-size:1rem;font-weight:700">⚙ Configurar Metas</div>
-        <div style="font-family:var(--mono);font-size:.6rem;color:var(--tx3);margin-top:2px">Conta: <span id="cfg-metas-badge" class="acct-badge demo">DEMO</span></div>
-      </div>
-      <button onclick="closeMetasConfigModal()" style="background:none;border:none;color:var(--tx3);font-size:1.3rem;cursor:pointer;line-height:1">&#x2715;</button>
-    </div>
-
-    <!-- METAS MENSAIS INDIVIDUAIS -->
-    <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:.75rem">Meta Mensal Individual (R$)</div>
-    <div id="cfg-metas-mensais" style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .75rem;margin-bottom:1.25rem"></div>
-
-    <!-- METAS TRIMESTRAIS -->
-    <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:.75rem;margin-top:.5rem;border-top:1px solid var(--b1);padding-top:1rem">Meta Trimestral Consolidada (R$)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem .75rem;margin-bottom:1.25rem">
-      <div class="fg"><label>Básico</label><input type="number" id="cfg-trim-basic" step="1000" min="0" placeholder="ex: 30000"></div>
-      <div class="fg"><label>Intermediário</label><input type="number" id="cfg-trim-inter" step="1000" min="0" placeholder="ex: 50000"></div>
-      <div class="fg"><label>Institucional</label><input type="number" id="cfg-trim-inst" step="1000" min="0" placeholder="ex: 80000"></div>
-    </div>
-
-    <!-- METAS ANUAIS -->
-    <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:.75rem;border-top:1px solid var(--b1);padding-top:1rem">Meta Anual Consolidada (R$)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem .75rem;margin-bottom:1.5rem">
-      <div class="fg"><label>Básico</label><input type="number" id="cfg-anual-basic" step="5000" min="0" placeholder="ex: 120000"></div>
-      <div class="fg"><label>Intermediário</label><input type="number" id="cfg-anual-inter" step="5000" min="0" placeholder="ex: 200000"></div>
-      <div class="fg"><label>Institucional</label><input type="number" id="cfg-anual-inst" step="5000" min="0" placeholder="ex: 320000"></div>
-    </div>
-
-    <div style="display:flex;gap:.5rem;justify-content:flex-end">
-      <button class="btn" onclick="closeMetasConfigModal()">Cancelar</button>
-      <button class="btn btn-p" onclick="saveConfigMetas()">💾 Salvar Metas</button>
-    </div>
-  </div>
-</div>
-
-<!-- OPÇÕES -->
-<div class="pg" id="page-options">
-  <div class="pg-head">
-    <div>
-      <div class="pg-title">Opções <span id="opt-acct-badge" class="acct-badge demo">DEMO</span></div>
-      <div class="pg-sub">Registro de posições em opções · Acesso restrito</div>
-    </div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="openAddOptionModal()">+ Nova Posição</button>
-    </div>
-  </div>
-  <div class="sec" style="margin:0">
-    <div class="sec-head"><div class="sec-title">Posições em Aberto</div></div>
-    <div class="sec-body" style="padding:0;overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.72rem">
-        <thead><tr style="border-bottom:1px solid var(--b2);color:var(--tx3);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase">
-          <th style="padding:.5rem .75rem;text-align:left">Ticker</th>
-          <th style="padding:.5rem .75rem;text-align:center">Tipo</th>
-          <th style="padding:.5rem .75rem;text-align:center">C/V</th>
-          <th style="padding:.5rem .75rem;text-align:right">Strike</th>
-          <th style="padding:.5rem .75rem;text-align:right">Prêmio</th>
-          <th style="padding:.5rem .75rem;text-align:right">Qtd</th>
-          <th style="padding:.5rem .75rem;text-align:right">Papel Atual</th>
-          <th style="padding:.5rem .75rem;text-align:right">L/P</th>
-          <th style="padding:.5rem .75rem;text-align:center">Vencimento</th>
-          <th style="padding:.5rem .75rem;text-align:center">Status</th>
-          <th style="padding:.5rem .75rem;text-align:center">Ações</th>
-        </tr></thead>
-        <tbody id="opt-tbody"><tr class="erow"><td colspan="11" style="text-align:center;padding:2rem;color:var(--tx3)">Nenhuma posição registrada</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="sec" style="margin:0;margin-top:1rem">
-    <div class="sec-head"><div class="sec-title">Posições Encerradas</div></div>
-    <div class="sec-body" style="padding:0;overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.72rem">
-        <thead><tr style="border-bottom:1px solid var(--b2);color:var(--tx3);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase">
-          <th style="padding:.5rem .75rem;text-align:left">Ticker</th>
-          <th style="padding:.5rem .75rem;text-align:center">Tipo</th>
-          <th style="padding:.5rem .75rem;text-align:center">C/V</th>
-          <th style="padding:.5rem .75rem;text-align:right">Strike</th>
-          <th style="padding:.5rem .75rem;text-align:right">Prêmio</th>
-          <th style="padding:.5rem .75rem;text-align:right">Qtd</th>
-          <th style="padding:.5rem .75rem;text-align:right">L/P</th>
-          <th style="padding:.5rem .75rem;text-align:center">Vencimento</th>
-          <th style="padding:.5rem .75rem;text-align:center">Ações</th>
-        </tr></thead>
-        <tbody id="opt-tbody-enc"><tr class="erow"><td colspan="9" style="text-align:center;padding:2rem;color:var(--tx3)">Nenhuma posição encerrada</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- CADASTROS -->
-<div class="pg" id="page-cadastros">
-  <div class="pg-head">
-    <div>
-      <div class="pg-title">Cadastros</div>
-      <div class="pg-sub">Dados pessoais dos traders · Acesso restrito</div>
-    </div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="openAddCadastroModal()">+ Novo Cadastro</button>
-    </div>
-  </div>
-  <div id="cadastros-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem">
-    <div class="erow" style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--tx3);font-family:var(--mono);font-size:.75rem">Nenhum cadastro registrado</div>
-  </div>
 </div>
 
 <!-- EXPORTAR -->
@@ -1161,11 +1045,13 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
         </div>
       </div>
     </div>
+    </div>
+    </div>
     <div class="sec" style="margin:0"><div class="sec-head"><div class="sec-title">Sobre v3</div></div>
       <div class="sec-body">
         <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx2);line-height:2.2">
           <div>Versão: <span style="color:var(--acc)">3.0.0</span></div>
-          <div>Armazenamento: <span style="color:var(--tx)">Supabase + localStorage</span></div>
+          <div>Armazenamento: <span style="color:var(--tx)">localStorage (offline)</span></div>
           <div>Minhas ops: <span id="cfg-nops" style="color:var(--gain)">-</span></div>
           <div>Traders na mesa: <span id="cfg-ntrd" style="color:var(--teal)">-</span></div>
           <div>Tamanho total: <span id="cfg-sz" style="color:var(--warn)">-</span></div>
@@ -1176,62 +1062,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 </div>
 
 </main></div>
-
-<!-- MODAL NOVA OPÇÃO -->
-<div class="mbk" id="add-option-modal">
-  <div class="mdl" style="max-width:520px">
-    <div class="mdl-title">Nova Posição em Opções</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-      <div class="fg" style="grid-column:1/-1"><label>Ticker do papel-objeto</label><input type="text" id="opt-ticker" placeholder="ex: PETR4" maxlength="10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-      <div class="fg"><label>Tipo</label><select id="opt-tipo"><option value="CALL">CALL (Alta)</option><option value="PUT">PUT (Baixa)</option></select></div>
-      <div class="fg"><label>Compra / Venda</label><select id="opt-cv"><option value="C">Compra</option><option value="V">Venda</option></select></div>
-      <div class="fg"><label>Strike (R$)</label><input type="number" id="opt-strike" step="0.01" min="0" placeholder="ex: 38.00"></div>
-      <div class="fg"><label>Prêmio pago (R$)</label><input type="number" id="opt-premio" step="0.01" min="0" placeholder="ex: 1.25"></div>
-      <div class="fg"><label>Quantidade</label><input type="number" id="opt-qtd" step="1" min="1" placeholder="ex: 100"></div>
-      <div class="fg"><label>Valor atual do papel (R$)</label><input type="number" id="opt-papel-atual" step="0.01" min="0" placeholder="ex: 37.50" oninput="calcOptLP()"></div>
-      <div class="fg"><label>L/P estimado (R$)</label><input type="number" id="opt-lp" step="0.01" placeholder="auto ou manual"></div>
-      <div class="fg"><label>Vencimento</label><input type="date" id="opt-venc"></div>
-      <div class="fg"><label>Status</label><select id="opt-status"><option value="aberta">Aberta</option><option value="encerrada">Encerrada</option></select></div>
-      <div class="fg" style="grid-column:1/-1"><label>Obs</label><input type="text" id="opt-obs" placeholder="observação opcional" maxlength="200"></div>
-    </div>
-    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem">
-      <button class="btn" onclick="closeAddOptionModal()">Cancelar</button>
-      <button class="btn btn-p" onclick="saveOption()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL NOVO CADASTRO -->
-<div class="mbk" id="add-cadastro-modal">
-  <div class="mdl" style="max-width:560px;max-height:90vh;overflow-y:auto">
-    <div class="mdl-title" id="cad-modal-title">Novo Cadastro</div>
-    <input type="hidden" id="cad-edit-id">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-      <!-- Dados pessoais -->
-      <div class="fg" style="grid-column:1/-1"><label>Nome completo</label><input type="text" id="cad-nome" placeholder="ex: Lucas Silva" maxlength="80"></div>
-      <div class="fg"><label>Função</label><select id="cad-role"><option value="Trader">Trader</option><option value="Gestor">Gestor</option><option value="Diretor">Diretor</option><option value="Outro">Outro</option></select></div>
-      <div class="fg"><label>Sexo</label><select id="cad-sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select></div>
-      <div class="fg"><label>Data de nascimento</label><input type="date" id="cad-nasc"></div>
-      <div class="fg"><label>CPF</label><input type="text" id="cad-cpf" placeholder="000.000.000-00" maxlength="14"></div>
-      <div class="fg"><label>RG</label><input type="text" id="cad-rg" placeholder="00.000.000-0" maxlength="20"></div>
-      <div class="fg"><label>Telefone</label><input type="text" id="cad-tel" placeholder="ex: (17) 99999-9999" maxlength="20"></div>
-      <div class="fg"><label>Email</label><input type="email" id="cad-email" placeholder="ex: lucas@email.com" maxlength="80"></div>
-      <div class="fg" style="grid-column:1/-1"><label>Telefone de emergência</label><input type="text" id="cad-tel-emerg" placeholder="ex: (17) 98888-8888 — Maria (mãe)" maxlength="80"></div>
-      <!-- Dados bancários -->
-      <div style="grid-column:1/-1;font-family:var(--mono);font-size:.6rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;padding-top:.25rem;border-top:1px solid var(--b2)">Dados Bancários</div>
-      <div class="fg" style="grid-column:1/-1"><label>Banco</label><input type="text" id="cad-banco" placeholder="ex: Itaú, Bradesco, Nubank…" maxlength="60"></div>
-      <div class="fg"><label>Agência</label><input type="text" id="cad-agencia" placeholder="ex: 0001" maxlength="20"></div>
-      <div class="fg"><label>Conta</label><input type="text" id="cad-conta" placeholder="ex: 12345-6" maxlength="30"></div>
-      <div class="fg" style="grid-column:1/-1"><label>Chave PIX</label><input type="text" id="cad-pix" placeholder="CPF, e-mail, telefone ou chave aleatória" maxlength="100"></div>
-      <!-- Observações -->
-      <div class="fg" style="grid-column:1/-1"><label>Observações</label><textarea id="cad-obs" rows="3" placeholder="Anotações livres…" style="width:100%;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.45rem .65rem;color:var(--tx);font-family:var(--mono);font-size:.75rem;resize:vertical"></textarea></div>
-    </div>
-    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem">
-      <button class="btn" onclick="closeAddCadastroModal()">Cancelar</button>
-      <button class="btn btn-p" onclick="saveCadastro()">Salvar</button>
-    </div>
-  </div>
-</div>
 
 <!-- MODALS -->
 <div class="mbk" id="add-trader-modal">
@@ -1637,8 +1467,7 @@ function delTData(tid){localStorage.removeItem(acctKey('dt_tops_')+tid);}
 // CALC
 function calcDay(ops){
   var g=0,s=0,gc=0,gR=0,sR=0;
-  var _ptv=CFG.ptval||0.20;
-  ops.forEach(function(o){var v=o.val||o.pts*_ptv;if(o.tipo==='GAIN'){g+=o.pts;gc++;gR+=v;}else{s+=o.pts;sR+=v;}});
+  ops.forEach(function(o){if(o.tipo==='GAIN'){g+=o.pts;gc++;gR+=o.val||0;}else{s+=o.pts;sR+=o.val||0;}});
   var tot=ops.length,wr=tot>0?Math.round(gc/tot*100):null;
   var gOps=ops.filter(function(o){return o.tipo==='GAIN';}),sOps=ops.filter(function(o){return o.tipo==='STOP';});
   var bId=gOps.length?gOps.reduce(function(a,b){return b.pts>a.pts?b:a;}).id:null;
@@ -1658,6 +1487,14 @@ function filterByPeriod(ops,mode,fromId,toId){
   else if(mode==='week'){var d=new Date(now),dy=d.getDay()||7;d.setDate(d.getDate()-dy+1);from=d.toISOString().slice(0,10);}
   else if(mode==='month'){from=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);}
   else if(mode==='custom'){from=fromId?($id(fromId)||{}).value||null:null;to=toId?($id(toId)||{}).value||null:null;}
+  else if(mode==='all'){/* sem filtro: from/to permanecem null */}
+  else if(/^\d+$/.test(mode)){
+    // Janelas em dias corridos (ex: '7','30','90') — usadas pelos filtros da aba Gráficos
+    var days=parseInt(mode,10);
+    var d=new Date(now);
+    d.setDate(d.getDate()-(days-1));
+    from=d.toISOString().slice(0,10);
+  }
   return ops.filter(function(o){return(!from||o.date>=from)&&(!to||o.date<=to);});
 }
 // CLOCK
@@ -1687,8 +1524,6 @@ function nav(page){
   else if(page==='ranking')renderRanking();
   else if(page==='export')renderExpPreview();
   else if(page==='config')renderConfig();
-  else if(page==='options')renderOptions();
-  else if(page==='cadastros')renderCadastros();
 }
 function mnavSel(el){document.querySelectorAll('.mnbtn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
 // TODAY
@@ -2259,9 +2094,8 @@ function renderTraderCards(traders){
     // R$ bruto — soma direta do campo val das operações (sem custos)
     var tOps=getMesaOps(t,mesaPeriod);
     var tValR=0,tGainR=0,tStopR=0;
-    var _pvT=CFG.ptval||0.20;
     tOps.forEach(function(o){
-      var v=o.val||o.pts*_pvT;
+      var v=o.val||0;
       if(o.tipo==='GAIN'){tValR+=v;tGainR+=v;}
       else{tValR-=v;tStopR+=v;}
     });
@@ -2389,8 +2223,7 @@ function renderMesaTable(){
       var ops=tData[t.id][d]||[];
       if(ops.length){
         var n=calcDay(ops).net;
-        var _pv=CFG.ptval||0.20;
-        var valR=0;ops.forEach(function(o){var v=o.val||o.pts*_pv;valR+=o.tipo==='GAIN'?v:-v;});
+        var valR=0;ops.forEach(function(o){valR+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
         ns.push(n);
         bh+='<td class="'+(n>0?'cg':n<0?'cs':'cm')+'" style="line-height:1.3">';
         bh+=(n>=0?'+':'')+fmtN(n)+' pts<br>';
@@ -2401,8 +2234,7 @@ function renderMesaTable(){
     if(vn.length){
       var avg=Math.round(vn.reduce(function(a,b){return a+b;},0)/vn.length);
       var valSum=0,valCnt=0;
-      var _pv2=CFG.ptval||0.20;
-      traders.forEach(function(t){var ops=tData[t.id][d]||[];if(ops.length){ops.forEach(function(o){var v=o.val||o.pts*_pv2;valSum+=o.tipo==='GAIN'?v:-v;});valCnt++;}});
+      traders.forEach(function(t){var ops=tData[t.id][d]||[];if(ops.length){ops.forEach(function(o){valSum+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});valCnt++;}});
       var avgVal=valCnt>0?valSum/valCnt:0;
       bh+='<td class="'+(avg>0?'ct':avg<0?'cs':'cm')+'" style="font-weight:700;line-height:1.3">';
       bh+=(avg>=0?'+':'')+fmtN(avg)+' pts<br>';
@@ -2780,6 +2612,7 @@ function renderConfig(){
   var ctEl=$id('cfg-contratos');if(ctEl)ctEl.value=CFG.contratos!==undefined?CFG.contratos:1;
   var crEl=$id('cfg-corr');if(crEl)crEl.value=CFG.corretagem!==undefined?CFG.corretagem:0.00;
   updateEmolPreview();
+  renderConfigMetas();
   var ops=loadOps(),traders=loadTraders(),sz=0;
   ['dt_ops','dt_cfg','dt_traders','dt_alerts'].forEach(function(k){sz+=(localStorage.getItem(k)||'').length;});traders.forEach(function(t){sz+=(localStorage.getItem('dt_tops_'+t.id)||'').length;});
   setText('cfg-nops',ops.length);setText('cfg-ntrd',traders.length);setText('cfg-sz',(sz/1024).toFixed(1)+' KB');
@@ -2871,11 +2704,10 @@ function calcSaldo(){
     else totalOut+=a.val;
   });
   var capitalLiquido=totalIn-totalOut;
-  // Resultado financeiro total das operações (sum of val fields, fallback to pts*ptval)
+  // Resultado financeiro total das operações (sum of val fields)
   var resultadoOps=0;
-  var _ptval=CFG.ptval||0.20;
   ops.forEach(function(o){
-    var v=o.val||o.pts*_ptval;
+    var v=o.val||0;
     resultadoOps+=o.tipo==='GAIN'?v:-v;
   });
   // Pts acumulados
@@ -2890,7 +2722,7 @@ function calcSaldo(){
   var bestDay=null,worstDay=null,bestVal=-Infinity,worstVal=Infinity;
   Object.keys(g).forEach(function(d){
     var dayR=0;
-    g[d].forEach(function(o){var v=o.val||o.pts*_ptval;dayR+=o.tipo==='GAIN'?v:-v;});
+    g[d].forEach(function(o){var v=o.val||0;dayR+=o.tipo==='GAIN'?v:-v;});
     if(dayR>bestVal){bestVal=dayR;bestDay=d;}
     if(dayR<worstVal){worstVal=dayR;worstDay=d;}
   });
@@ -3646,12 +3478,10 @@ function renderMesaTotalBanner(){
   dirOps.forEach(function(o){dirLiq+=o.liq;dirPts+=o.pts;});
 
   var traderLiq=0, traderGains=0, traderStops=0, traderOps=0;
-  var _pvBanner=CFG.ptval||0.20;
   traders.forEach(function(t){
     var ops=getMesaOps(t,mesaPeriod);
     ops.forEach(function(o){
-      var v=o.val||o.pts*_pvBanner;
-      traderLiq+=o.tipo==='GAIN'?v:-v;
+      traderLiq+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);
       if(o.tipo==='GAIN') traderGains+=o.pts;
       else traderStops+=o.pts;
       traderOps++;
@@ -3681,7 +3511,7 @@ function renderMesaTotalBanner(){
   var traderBreakdown='';
   traders.forEach(function(t){
     var tOps=getMesaOps(t,mesaPeriod);
-    var tLiq=0;var _pvBd=CFG.ptval||0.20;tOps.forEach(function(o){var v=o.val||o.pts*_pvBd;tLiq+=o.tipo==='GAIN'?v:-v;});
+    var tLiq=0;tOps.forEach(function(o){tLiq+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
     var tc=tLiq>0?'cg':tLiq<0?'cs':'cm';
     traderBreakdown+=
       '<div class="mtb-stat">'+
@@ -4117,35 +3947,9 @@ function curYearRange(){
 }
 // Get R$ result for a trader in a date range
 function traderResultR(tid, from, to){
-  // CSV ops
-  var csvOps=loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
-  // Personal ops from linkedOpsCache (ops do banco pessoal do trader)
-  var traders=loadTraders();
-  var trader=traders.filter(function(t){return t.id===tid;})[0];
-  var personalOps=[];
-  if(trader&&trader.linkedUserId){
-    var cache=linkedOpsCache[trader.linkedUserId];
-    if(cache&&cache[curAccount]){
-      personalOps=cache[curAccount].filter(function(o){return o.date>=from&&o.date<=to;});
-    }
-  }
-  // Merge with dedup by date+time+tipo+pts
-  var seen={};
-  var merged=[];
-  csvOps.forEach(function(o){
-    var k=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
-    seen[k]=true;merged.push(o);
-  });
-  personalOps.forEach(function(o){
-    var k=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;
-    if(!seen[k]){seen[k]=true;merged.push(o);}
-  });
+  var ops=loadTOps(tid).filter(function(o){return o.date>=from&&o.date<=to;});
   var r=0;
-  var ptval=CFG.ptval||0.20;
-  merged.forEach(function(o){
-    var v=o.val||o.pts*ptval;
-    r+=o.tipo==='GAIN'?v:-v;
-  });
+  ops.forEach(function(o){r+=o.tipo==='GAIN'?(o.val||0):-(o.val||0);});
   return r;
 }
 // Get R$ result for director in a date range
@@ -4172,31 +3976,9 @@ function renderMetas(){
   var badge=$id('metas-acct-badge');
   if(badge){badge.textContent=curAccount.toUpperCase();badge.className='acct-badge '+curAccount;}
 
-  var role=getRole();
-  if((role==='gestor'||role==='diretor')&&supabase&&currentUser){
-    // Load personal ops of all linked traders before rendering
-    var traders=loadTraders();
-    loadLinkedTraderOps(traders, curAccount, function(){
-      renderMetasMensal();
-      renderMetasTrimestral();
-      renderMetasAnual();
-    });
-  } else {
-    renderMetasMensal();
-    renderMetasTrimestral();
-    renderMetasAnual();
-  }
-}
-
-// ── MODAL CONFIGURAR METAS ────────────────────────────────────────────
-function openMetasConfigModal(){
-  renderConfigMetas();
-  var m=$id('metas-config-modal');
-  if(m)m.style.display='flex';
-}
-function closeMetasConfigModal(){
-  var m=$id('metas-config-modal');
-  if(m)m.style.display='none';
+  renderMetasMensal();
+  renderMetasTrimestral();
+  renderMetasAnual();
 }
 
 // ── MENSAL ────────────────────────────────────────────────────────────
@@ -4552,7 +4334,6 @@ function saveConfigMetas(){
   };
   saveMetas(metas);
   toast('Metas salvas','g');
-  closeMetasConfigModal();
   if(curPage==='metas')renderMetas();
   sbPushGoals(metas, mensais, curAccount);
 }
@@ -4679,10 +4460,8 @@ function onAuthSuccess(){
     loadAllUserData(function(){
       seedDemo();loadCFG();onTipo();
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
-      // Load profiles for gestor/diretor view
-      if(getRole()==='gestor'||getRole()==='diretor') loadAllProfiles(function(){});
-      // Carrega cadastros do Supabase
-      loadCadastrosFromDB(function(){ renderCadastros(); });
+      // Load profiles for gestor view
+      if(getRole()==='gestor') loadAllProfiles(function(){});
       _authBooting=false;
       initRoleSystem();
       toast('Bem-vindo, '+(currentProfile?currentProfile.name:'')+'!','g');
@@ -4955,7 +4734,7 @@ function loadAllUserData(callback){
       if(res.data&&res.data.length){
         var dc={};
         res.data.forEach(function(r){dc[r.date]={content:r.content||'',mood:r.mood||0,tags:r.tags||[]};});
-        var key='dt_diary_'+uid+'_'+now2.getFullYear()+'_'+now2.getMonth();
+        var key='dt_diary_'+curAccount+'_'+now2.getFullYear()+'_'+now2.getMonth();
         localStorage.setItem(key,JSON.stringify(dc));
       }
       done();
@@ -5150,8 +4929,7 @@ var DAYS_PT   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 function loadDiaryCache(year, month, callback){
   // Use diaryViewUserId if gestor is viewing another person's diary
   var targetUserId = diaryViewUserId || (currentUser ? currentUser.id : null);
-  var _ownId=currentUser?currentUser.id:curAccount;
-  var key = 'dt_diary_'+(diaryViewUserId||_ownId)+'_'+year+'_'+month;
+  var key = 'dt_diary_'+(diaryViewUserId||curAccount)+'_'+year+'_'+month;
   // Don't use cache when viewing another person (always fetch fresh)
   // Always fetch from Supabase to ensure images are current
   if(!supabase||!targetUserId){ diaryCache = {}; if(callback) callback(); return; }
@@ -5181,8 +4959,7 @@ function saveDiaryEntry(){
     diaryImgPending=[];
     renderDiaryImgGrid();
     diaryCache[diarySelDate] = entry;
-    var _sid=currentUser?currentUser.id:curAccount;
-    var key = 'dt_diary_'+_sid+'_'+diaryYear+'_'+diaryMonth;
+    var key = 'dt_diary_'+curAccount+'_'+diaryYear+'_'+diaryMonth;
     localStorage.setItem(key, JSON.stringify(diaryCache));
     if(supabase&&currentUser){
       supabase.from('diary').upsert({
@@ -5209,18 +4986,8 @@ function saveDiaryEntry(){
 
 // ── GET DAY PNL ───────────────────────────────────────────────────────
 function getDayPnl(isoDate, acct){
-  var useAcct = acct||curAccount;
-  var ops;
-  // When gestor/diretor is viewing another trader's diary, use their cached ops
-  if(diaryViewUserId && linkedOpsCache[diaryViewUserId] && linkedOpsCache[diaryViewUserId][useAcct]){
-    ops = linkedOpsCache[diaryViewUserId][useAcct].filter(function(o){ return o.date===isoDate; });
-  } else if(diaryViewUserId){
-    // Viewed trader's ops not yet in cache — return empty (will populate after load)
-    return {val:0, ops:0};
-  } else {
-    ops = (JSON.parse(localStorage.getItem('dt_ops_'+useAcct)||'[]'))
-      .filter(function(o){ return o.date===isoDate; });
-  }
+  var ops = (JSON.parse(localStorage.getItem('dt_ops_'+(acct||curAccount))||'[]'))
+    .filter(function(o){ return o.date===isoDate; });
   var r = 0;
   ops.forEach(function(o){ r += o.tipo==='GAIN'?(o.val||o.pts*CFG.ptval):-(o.val||o.pts*CFG.ptval); });
   return {val:r, ops:ops.length};
@@ -5499,17 +5266,17 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
+  diretor: ['mesa','metas','diario','pnl','news'],
   viewer:  ['news']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','options','cadastros'],
+  diretor: ['mesa','metas','diario','pnl','news'],
   viewer:  ['news']
 };
 
@@ -5525,7 +5292,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config','options','cadastros'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
@@ -5611,8 +5378,7 @@ var gestorProfiles = [];  // all user profiles from Supabase
 
 // ── LOAD ALL PROFILES (called on gestor login) ─────────────────────────
 function loadAllProfiles(callback){
-  var r=getRole();
-  if(!supabase||!currentUser||(r!=='gestor'&&r!=='diretor')){if(callback)callback([]);return;}
+  if(!supabase||!currentUser||getRole()!=='gestor'){if(callback)callback([]);return;}
   supabase.from('profiles').select('*').order('name')
     .then(function(res){
       gestorProfiles = res.data||[];
@@ -5760,8 +5526,7 @@ function refreshGestorView(){
     var gains=ops.filter(function(o){return o.tipo==='GAIN';});
     var stops=ops.filter(function(o){return o.tipo==='STOP';});
     var totalPts=gains.reduce(function(s,o){return s+o.pts;},0)-stops.reduce(function(s,o){return s+o.pts;},0);
-    var _pvGv=CFG.ptval||0.20;
-    var totalR=ops.reduce(function(s,o){var v=o.val||o.pts*_pvGv;return s+(o.tipo==='GAIN'?v:-v);},0);
+    var totalR=ops.reduce(function(s,o){return s+(o.tipo==='GAIN'?(o.val||0):-(o.val||0));},0);
     var wr=ops.length>0?Math.round(gains.length/ops.length*100):0;
     var nc=totalPts>=0?'cg':'cs';
 
@@ -5873,7 +5638,7 @@ function initDiaryPersonSelector(){
   var wrap=$id('diary-person-wrap');
   if(!wrap)return;
   var role=getRole();
-  if(role!=='gestor'&&role!=='diretor'){wrap.style.display='none';return;}
+  if(role!=='gestor'){wrap.style.display='none';return;}
   wrap.style.display='flex';
 
   // Populate with profiles
@@ -5920,37 +5685,11 @@ function onDiaryPersonChange(){
   diaryYear=new Date().getFullYear();
   diarySelDate=null;
   diaryCache={};
-
-  function doRender(){
-    loadDiaryCache(diaryYear,diaryMonth,function(){
-      renderDiaryCalendar();
-      var todayStr=new Date().toISOString().slice(0,10);
-      selectDiaryDay(todayStr);
-    });
-  }
-
-  // If viewing another trader, ensure their ops are in linkedOpsCache for correct PNL colors
-  if(diaryViewUserId && supabase){
-    // Check if already loaded
-    if(linkedOpsCache[diaryViewUserId] && linkedOpsCache[diaryViewUserId][curAccount]){
-      doRender();
-    } else {
-      // Fetch trader ops directly from Supabase
-      supabase.from('operations').select('*')
-        .eq('user_id',diaryViewUserId).eq('account_type',curAccount)
-        .order('ts',{ascending:true})
-        .then(function(res){
-          if(!linkedOpsCache[diaryViewUserId])linkedOpsCache[diaryViewUserId]={};
-          linkedOpsCache[diaryViewUserId][curAccount]=(res.data||[]).map(function(r){
-            return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,
-                   pts:parseFloat(r.pts)||0,val:parseFloat(r.val||0),obs:r.obs||''};
-          });
-          doRender();
-        });
-    }
-  } else {
-    doRender();
-  }
+  loadDiaryCache(diaryYear,diaryMonth,function(){
+    renderDiaryCalendar();
+    var todayStr=new Date().toISOString().slice(0,10);
+    selectDiaryDay(todayStr);
+  });
 }
 
 // ── LINKED TRADER OPS CACHE ──────────────────────────────────────────
@@ -6286,396 +6025,6 @@ if(CFG.name)setText('sb-tag',CFG.name.toUpperCase());
 renderSaldo();
 // Slight delay so DOM is ready for badge injection
 setTimeout(updateAccountBadges,50);
-
-// ═══════════════════════════════════════════════════════════
-// ABA OPÇÕES
-// ═══════════════════════════════════════════════════════════
-function loadOptions(){
-  try{var r=localStorage.getItem(acctKey('dt_options'));return r?JSON.parse(r):[];}catch(e){return[];}
-}
-function saveOptions(arr){localStorage.setItem(acctKey('dt_options'),JSON.stringify(arr));}
-
-function openAddOptionModal(){
-  // Reset fields
-  ['opt-ticker','opt-strike','opt-premio','opt-qtd','opt-papel-atual','opt-lp','opt-obs'].forEach(function(id){var el=$id(id);if(el)el.value='';});
-  var vEl=$id('opt-venc');if(vEl)vEl.value=today();
-  var st=$id('opt-status');if(st)st.value='aberta';
-  var tp=$id('opt-tipo');if(tp)tp.value='CALL';
-  var cv=$id('opt-cv');if(cv)cv.value='C';
-  var m=$id('add-option-modal');if(m)m.style.display='flex';
-}
-function closeAddOptionModal(){var m=$id('add-option-modal');if(m)m.style.display='none';}
-
-function calcOptLP(){
-  var tipo=($id('opt-tipo')||{}).value||'CALL';
-  var cv=($id('opt-cv')||{}).value||'C';
-  var strike=parseFloat(($id('opt-strike')||{}).value)||0;
-  var papel=parseFloat(($id('opt-papel-atual')||{}).value)||0;
-  var premio=parseFloat(($id('opt-premio')||{}).value)||0;
-  var qtd=parseFloat(($id('opt-qtd')||{}).value)||0;
-  if(!strike||!papel||!qtd)return;
-  var intrinseco=tipo==='CALL'?Math.max(0,papel-strike):Math.max(0,strike-papel);
-  var lp=(intrinseco-premio)*qtd*(cv==='V'?-1:1);
-  var lpEl=$id('opt-lp');if(lpEl)lpEl.value=lp.toFixed(2);
-}
-
-function saveOption(){
-  var ticker=($id('opt-ticker')||{}).value||'';
-  if(!ticker){toast('Informe o ticker','s');return;}
-  var arr=loadOptions();
-  arr.push({
-    id:uid(),
-    ticker:ticker,
-    tipo:($id('opt-tipo')||{}).value||'CALL',
-    cv:($id('opt-cv')||{}).value||'C',
-    strike:parseFloat(($id('opt-strike')||{}).value)||0,
-    premio:parseFloat(($id('opt-premio')||{}).value)||0,
-    qtd:parseFloat(($id('opt-qtd')||{}).value)||0,
-    papelAtual:parseFloat(($id('opt-papel-atual')||{}).value)||0,
-    lp:parseFloat(($id('opt-lp')||{}).value)||0,
-    venc:($id('opt-venc')||{}).value||'',
-    status:($id('opt-status')||{}).value||'aberta',
-    obs:($id('opt-obs')||{}).value||'',
-    createdAt:new Date().toISOString()
-  });
-  saveOptions(arr);
-  closeAddOptionModal();
-  renderOptions();
-  toast('Posição salva','g');
-}
-
-function deleteOption(id){
-  if(!confirm('Remover esta posição?'))return;
-  saveOptions(loadOptions().filter(function(o){return o.id!==id;}));
-  renderOptions();
-  toast('Posição removida');
-}
-
-function toggleOptionStatus(id){
-  var arr=loadOptions();
-  arr=arr.map(function(o){
-    if(o.id===id)o.status=o.status==='aberta'?'encerrada':'aberta';
-    return o;
-  });
-  saveOptions(arr);
-  renderOptions();
-}
-
-function renderOptions(){
-  var badge=$id('opt-acct-badge');
-  if(badge){badge.textContent=curAccount.toUpperCase();badge.className='acct-badge '+curAccount;}
-  var arr=loadOptions();
-  var abertas=arr.filter(function(o){return o.status==='aberta';});
-  var encerradas=arr.filter(function(o){return o.status!=='aberta';});
-  var fmtLp=function(v){return(v>=0?'+':'')+fmtR(v);};
-  var clp=function(v){return v>0?'cg':v<0?'cs':'cm';};
-  var rowA=function(o){
-    return'<tr style="border-bottom:1px solid var(--b1)">'
-      +'<td style="padding:.45rem .75rem;font-weight:700;color:var(--tx)">'+o.ticker+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:center"><span style="color:'+(o.tipo==='CALL'?'var(--gain)':'var(--stop)')+'">'+o.tipo+'</span></td>'
-      +'<td style="padding:.45rem .75rem;text-align:center"><span style="color:'+(o.cv==='C'?'var(--teal)':'var(--purp)')+'">'+o.cv+'</span></td>'
-      +'<td style="padding:.45rem .75rem;text-align:right">'+fmtR(o.strike)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right">'+fmtR(o.premio)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right">'+o.qtd+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right">'+fmtR(o.papelAtual||0)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right" class="'+clp(o.lp)+'">'+fmtLp(o.lp)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:center;color:var(--tx3)">'+fmtDate(o.venc)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:center"><span style="font-size:.65rem;padding:2px 7px;border-radius:3px;background:var(--accdim);color:var(--acc)">Aberta</span></td>'
-      +'<td style="padding:.45rem .75rem;text-align:center;white-space:nowrap">'
-      +'<button class="btn btn-sm" onclick="toggleOptionStatus(\''+o.id+'\')" title="Encerrar" style="font-size:.6rem;padding:.15rem .4rem">✓ Encerrar</button> '
-      +'<button class="btn btn-del btn-sm" onclick="deleteOption(\''+o.id+'\')" title="Remover" style="font-size:.6rem;padding:.15rem .4rem">✕</button>'
-      +'</td></tr>';
-  };
-  var rowE=function(o){
-    return'<tr style="border-bottom:1px solid var(--b1);opacity:.7">'
-      +'<td style="padding:.45rem .75rem;font-weight:700;color:var(--tx3)">'+o.ticker+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:center"><span style="color:'+(o.tipo==='CALL'?'var(--gain)':'var(--stop)')+'">'+o.tipo+'</span></td>'
-      +'<td style="padding:.45rem .75rem;text-align:center">'+o.cv+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right">'+fmtR(o.strike)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right">'+fmtR(o.premio)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right">'+o.qtd+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:right" class="'+clp(o.lp)+'">'+fmtLp(o.lp)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:center;color:var(--tx3)">'+fmtDate(o.venc)+'</td>'
-      +'<td style="padding:.45rem .75rem;text-align:center">'
-      +'<button class="btn btn-sm" onclick="toggleOptionStatus(\''+o.id+'\')" title="Reabrir" style="font-size:.6rem;padding:.15rem .4rem">↩ Reabrir</button> '
-      +'<button class="btn btn-del btn-sm" onclick="deleteOption(\''+o.id+'\')" style="font-size:.6rem;padding:.15rem .4rem">✕</button>'
-      +'</td></tr>';
-  };
-  var tbA=$id('opt-tbody');
-  if(tbA)tbA.innerHTML=abertas.length?abertas.map(rowA).join(''):'<tr class="erow"><td colspan="11" style="text-align:center;padding:2rem;color:var(--tx3)">Nenhuma posição em aberto</td></tr>';
-  var tbE=$id('opt-tbody-enc');
-  if(tbE)tbE.innerHTML=encerradas.length?encerradas.map(rowE).join(''):'<tr class="erow"><td colspan="9" style="text-align:center;padding:2rem;color:var(--tx3)">Nenhuma posição encerrada</td></tr>';
-}
-
-// ═══════════════════════════════════════════════════════════
-// ABA CADASTROS — sincronizado com Supabase
-// ═══════════════════════════════════════════════════════════
-
-// Cache em memória dos cadastros (carregado do Supabase)
-var _cadastrosCache = [];
-
-// Converte linha do Supabase para objeto JS usado localmente
-// Estrutura real da tabela: id, owner_id, name, role_label, sexo,
-//   nascimento, cpf, rg, phone, email, tel_emerg, banco, agencia,
-//   conta, pix, obs, created_at, updated_at
-function _dbRowToCad(r){
-  return {
-    id: r.id,
-    nome: r.name||'',
-    roleLabel: r.role_label||'Trader',
-    sexo: r.sexo||'',
-    nasc: r.nascimento||'',  // DATE → "YYYY-MM-DD"
-    cpf: r.cpf||'',
-    rg: r.rg||'',
-    tel: r.phone||'',
-    email: r.email||'',
-    telEmerg: r.tel_emerg||'',
-    banco: r.banco||'',
-    agencia: r.agencia||'',
-    conta: r.conta||'',
-    pix: r.pix||'',
-    obs: r.obs||''
-  };
-}
-
-// Carrega cadastros do Supabase (ou localStorage como fallback)
-function loadCadastrosFromDB(callback){
-  if(!supabase||!currentUser){
-    // fallback: localStorage (dados antigos)
-    try{var r=localStorage.getItem('dt_cadastros');_cadastrosCache=r?JSON.parse(r):[];}catch(e){_cadastrosCache=[];}
-    if(callback)callback();
-    return;
-  }
-  supabase.from('cadastros').select('*')
-    .eq('owner_id',currentUser.id)
-    .order('name',{ascending:true})
-    .then(function(res){
-      if(res.error){
-        console.warn('loadCadastrosFromDB error:',res.error.message);
-        // fallback: localStorage
-        try{var r=localStorage.getItem('dt_cadastros');_cadastrosCache=r?JSON.parse(r):[];}catch(e){_cadastrosCache=[];}
-      } else {
-        _cadastrosCache=(res.data||[]).map(_dbRowToCad);
-        // Se tinha dados no localStorage (versão antiga), migra para o banco
-        try{
-          var old=JSON.parse(localStorage.getItem('dt_cadastros')||'[]');
-          if(old.length>0&&_cadastrosCache.length===0){
-            // Normaliza objeto antigo (campos podiam ter nomes diferentes)
-            old.forEach(function(c){
-              var norm={
-                id: c.id||uid(),
-                nome: c.nome||c.name||'',
-                roleLabel: c.roleLabel||'Trader',
-                sexo: c.sexo||'',
-                nasc: c.nasc||c.nascimento||'',
-                cpf: c.cpf||'',
-                rg: c.rg||'',
-                tel: c.tel||c.telefone||c.phone||'',
-                email: c.email||c.email_pessoal||'',
-                telEmerg: c.telEmerg||c.telefone_emergencia||c.tel_emerg||'',
-                banco: c.banco||'',
-                agencia: c.agencia||'',
-                conta: c.conta||'',
-                pix: c.pix||'',
-                obs: c.obs||''
-              };
-              _sbUpsertCadastro(norm,null);
-            });
-            localStorage.removeItem('dt_cadastros');
-            toast('Cadastros migrados para o banco de dados','g');
-            // Recarrega após migração
-            setTimeout(function(){loadCadastrosFromDB(callback);},800);
-            return;
-          }
-        }catch(e){}
-      }
-      if(callback)callback();
-    });
-}
-
-// Retorna cache local (compatibilidade com código legado)
-function loadCadastros(){ return _cadastrosCache; }
-
-// Upsert no Supabase (cria ou atualiza)
-// Colunas pós-migração: name, owner_id, role_label, sexo, nascimento(DATE),
-//   cpf, rg, phone, email, tel_emerg, banco, agencia, conta, pix, obs
-function _sbUpsertCadastro(obj, doneCallback){
-  if(!supabase||!currentUser){if(doneCallback)doneCallback();return;}
-  var row={
-    id: obj.id,
-    owner_id: currentUser.id,
-    name: obj.nome,
-    role_label: obj.roleLabel||'Trader',
-    sexo: obj.sexo||null,
-    nascimento: obj.nasc||null,   // string "YYYY-MM-DD" ou null
-    cpf: obj.cpf||null,
-    rg: obj.rg||null,
-    phone: obj.tel||null,
-    email: obj.email||null,
-    tel_emerg: obj.telEmerg||null,
-    banco: obj.banco||null,
-    agencia: obj.agencia||null,
-    conta: obj.conta||null,
-    pix: obj.pix||null,
-    obs: obj.obs||null
-  };
-  // nascimento vazio → null (campo DATE não aceita string vazia)
-  if(!row.nascimento)row.nascimento=null;
-  supabase.from('cadastros').upsert(row,{onConflict:'id'}).then(function(res){
-    if(res.error) console.warn('_sbUpsertCadastro error:',res.error.message);
-    if(doneCallback)doneCallback(res.error);
-  });
-}
-
-// Deleta no Supabase
-function _sbDeleteCadastro(id, doneCallback){
-  if(!supabase||!currentUser){if(doneCallback)doneCallback();return;}
-  supabase.from('cadastros').delete().eq('id',id).eq('owner_id',currentUser.id).then(function(res){
-    if(res.error) console.warn('_sbDeleteCadastro error:',res.error.message);
-    if(doneCallback)doneCallback(res.error);
-  });
-}
-
-function openAddCadastroModal(){
-  var editId=$id('cad-edit-id');if(editId)editId.value='';
-  var title=$id('cad-modal-title');if(title)title.textContent='Novo Cadastro';
-  ['cad-nome','cad-cpf','cad-rg','cad-tel','cad-email','cad-tel-emerg','cad-banco','cad-agencia','cad-conta','cad-pix','cad-obs'].forEach(function(fid){var el=$id(fid);if(el)el.value='';});
-  var nasc=$id('cad-nasc');if(nasc)nasc.value='';
-  var sx=$id('cad-sexo');if(sx)sx.value='';
-  var rl=$id('cad-role');if(rl)rl.value='Trader';
-  var m=$id('add-cadastro-modal');if(m)m.style.display='flex';
-}
-function closeAddCadastroModal(){var m=$id('add-cadastro-modal');if(m)m.style.display='none';}
-
-function editCadastro(id){
-  var c=_cadastrosCache.filter(function(x){return x.id===id;})[0];
-  if(!c)return;
-  var editId=$id('cad-edit-id');if(editId)editId.value=id;
-  var title=$id('cad-modal-title');if(title)title.textContent='Editar Cadastro';
-  var nome=$id('cad-nome');if(nome)nome.value=c.nome||'';
-  var rl=$id('cad-role');if(rl)rl.value=c.roleLabel||'Trader';
-  var sx=$id('cad-sexo');if(sx)sx.value=c.sexo||'';
-  var nasc=$id('cad-nasc');if(nasc)nasc.value=c.nasc||'';
-  var cpf=$id('cad-cpf');if(cpf)cpf.value=c.cpf||'';
-  var rg=$id('cad-rg');if(rg)rg.value=c.rg||'';
-  var tel=$id('cad-tel');if(tel)tel.value=c.tel||'';
-  var email=$id('cad-email');if(email)email.value=c.email||'';
-  var emerg=$id('cad-tel-emerg');if(emerg)emerg.value=c.telEmerg||'';
-  var banco=$id('cad-banco');if(banco)banco.value=c.banco||'';
-  var ag=$id('cad-agencia');if(ag)ag.value=c.agencia||'';
-  var ct=$id('cad-conta');if(ct)ct.value=c.conta||'';
-  var pix=$id('cad-pix');if(pix)pix.value=c.pix||'';
-  var obs=$id('cad-obs');if(obs)obs.value=c.obs||'';
-  var m=$id('add-cadastro-modal');if(m)m.style.display='flex';
-}
-
-function saveCadastro(){
-  var nome=($id('cad-nome')||{}).value||'';
-  if(!nome){toast('Informe o nome','s');return;}
-  var editId=($id('cad-edit-id')||{}).value||'';
-  var obj={
-    id:editId||uid(),
-    nome:nome,
-    roleLabel:($id('cad-role')||{}).value||'Trader',
-    sexo:($id('cad-sexo')||{}).value||'',
-    nasc:($id('cad-nasc')||{}).value||'',
-    cpf:($id('cad-cpf')||{}).value||'',
-    rg:($id('cad-rg')||{}).value||'',
-    tel:($id('cad-tel')||{}).value||'',
-    email:($id('cad-email')||{}).value||'',
-    telEmerg:($id('cad-tel-emerg')||{}).value||'',
-    banco:($id('cad-banco')||{}).value||'',
-    agencia:($id('cad-agencia')||{}).value||'',
-    conta:($id('cad-conta')||{}).value||'',
-    pix:($id('cad-pix')||{}).value||'',
-    obs:($id('cad-obs')||{}).value||''
-  };
-  // Atualiza cache local imediatamente
-  if(editId){
-    _cadastrosCache=_cadastrosCache.map(function(x){return x.id===editId?obj:x;});
-  } else {
-    _cadastrosCache.push(obj);
-  }
-  closeAddCadastroModal();
-  renderCadastros();
-  // Persiste no Supabase em background
-  _sbUpsertCadastro(obj,function(err){
-    if(err){toast('Erro ao salvar no banco','s');}
-    else{toast('Cadastro salvo','g');}
-  });
-}
-
-function deleteCadastro(id){
-  if(!confirm('Remover este cadastro?'))return;
-  _cadastrosCache=_cadastrosCache.filter(function(x){return x.id!==id;});
-  renderCadastros();
-  _sbDeleteCadastro(id,function(err){
-    if(err){toast('Erro ao remover do banco','s');}
-    else{toast('Cadastro removido');}
-  });
-}
-
-function renderCadastros(){
-  var arr=loadCadastros();
-  var grid=$id('cadastros-grid');
-  if(!grid)return;
-  if(!arr.length){
-    grid.innerHTML='<div class="erow" style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--tx3);font-family:var(--mono);font-size:.75rem">Nenhum cadastro registrado</div>';
-    return;
-  }
-  var todayStr=today();
-  var html=arr.map(function(c){
-    var aniv='';
-    var borderCol='var(--b2)';
-    if(c.nasc){
-      var nascParts=c.nasc.split('-');
-      if(nascParts.length===3){
-        var mesNasc=nascParts[1],diaNasc=nascParts[2];
-        var todayParts=todayStr.split('-');
-        var mesTd=todayParts[1],diaTd=todayParts[2];
-        if(mesNasc===mesTd&&diaNasc===diaTd){
-          aniv='<div style="font-family:var(--mono);font-size:.6rem;font-weight:700;color:var(--gain);margin-bottom:.35rem">🎂 Aniversário hoje!</div>';
-          borderCol='var(--gain)';
-        } else {
-          var anoAtual=parseInt(todayParts[0]);
-          var proxAniv=new Date(anoAtual,parseInt(mesNasc)-1,parseInt(diaNasc));
-          if(proxAniv<new Date(todayStr))proxAniv=new Date(anoAtual+1,parseInt(mesNasc)-1,parseInt(diaNasc));
-          var diff=Math.round((proxAniv-new Date(todayStr))/(1000*60*60*24));
-          if(diff<=7){
-            aniv='<div style="font-family:var(--mono);font-size:.6rem;color:var(--purp);margin-bottom:.35rem">🎂 Aniversário em '+diff+' dia'+(diff>1?'s':'')+'</div>';
-            borderCol='var(--purp)';
-          }
-        }
-      }
-    }
-    var nascFmt=c.nasc?c.nasc.split('-').reverse().join('/'):'—';
-    var sx=c.sexo==='M'?'♂':c.sexo==='F'?'♀':'';
-    var roleTag=c.roleLabel&&c.roleLabel!=='Trader'?'<span style="font-family:var(--mono);font-size:.58rem;background:var(--s3);border-radius:3px;padding:.1rem .35rem;color:var(--acc);margin-left:.3rem">'+c.roleLabel+'</span>':'';
-    // Dados bancários (só mostra se preenchido)
-    var bancoDados='';
-    if(c.banco||c.pix){
-      bancoDados='<div style="margin-top:.25rem;padding-top:.25rem;border-top:1px solid var(--b2)">';
-      if(c.banco)bancoDados+='<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">Banco: <span style="color:var(--tx2)">'+c.banco+(c.agencia?' | Ag: '+c.agencia:'')+(c.conta?' | Cc: '+c.conta:'')+'</span></div>';
-      if(c.pix)bancoDados+='<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">PIX: <span style="color:var(--teal)">'+c.pix+'</span></div>';
-      bancoDados+='</div>';
-    }
-    return'<div style="background:var(--s2);border:1px solid '+borderCol+';border-radius:var(--r2);padding:1rem;display:flex;flex-direction:column;gap:.4rem">'
-      +aniv
-      +'<div style="font-family:var(--sans);font-size:.88rem;font-weight:700;color:var(--tx)">'+c.nome+' <span style="font-size:.75rem;color:var(--tx3)">'+sx+'</span>'+roleTag+'</div>'
-      +(c.cpf?'<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">CPF: <span style="color:var(--tx2)">'+c.cpf+'</span></div>':'')
-      +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Nascimento: <span style="color:var(--tx2)">'+nascFmt+'</span></div>'
-      +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Telefone: <span style="color:var(--tx2)">'+(c.tel||'—')+'</span></div>'
-      +'<div style="font-family:var(--mono);font-size:.65rem;color:var(--tx3)">Email: <span style="color:var(--tx2)">'+(c.email||'—')+'</span></div>'
-      +(c.telEmerg?'<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3)">Emergência: <span style="color:var(--tx2)">'+c.telEmerg+'</span></div>':'')
-      +bancoDados
-      +(c.obs?'<div style="font-family:var(--mono);font-size:.62rem;color:var(--tx3);font-style:italic">'+c.obs+'</div>':'')
-      +'<div style="display:flex;gap:.4rem;margin-top:.5rem">'
-      +'<button class="btn btn-sm btn-g" onclick="editCadastro(\''+c.id+'\')">✏ Editar</button>'
-      +'<button class="btn btn-sm btn-del" onclick="deleteCadastro(\''+c.id+'\')">✕</button>'
-      +'</div></div>';
-  }).join('');
-  grid.innerHTML=html;
-}
 </script>
 </body>
 </html>
