@@ -967,7 +967,13 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="pg-head">
     <div>
       <div class="pg-title">📅 PNL Calendar</div>
-      <div class="pg-sub">Resultado diário por mês · clique no dia para ver o diário</div>
+      <div class="pg-sub" id="pnl-pg-sub">Resultado diário por mês · clique no dia para ver o diário</div>
+    </div>
+    <div id="pnl-person-wrap" style="display:none;align-items:center;gap:.4rem">
+      <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx3)">Ver:</span>
+      <select id="pnl-person-sel" onchange="onPnlPersonChange()" style="font-family:var(--mono);font-size:.68rem;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.3rem .6rem;color:var(--tx)">
+        <option value="">— Meu calendário —</option>
+      </select>
     </div>
   </div>
   <!-- Header stats + nav -->
@@ -5442,13 +5448,65 @@ function renderDiario(){
 var pnlMonth = new Date().getMonth();
 var pnlYear  = new Date().getFullYear();
 var pnlAcct  = 'demo';
+var pnlViewUserId = null; // gestor: id do trader sendo visualizado (null = o próprio)
 
 function setPnlAcct(a){
   pnlAcct=a;
   document.querySelectorAll('#pnl-acct-tabs .ptab').forEach(function(b){
     b.classList.toggle('on',b.getAttribute('data-pa')===a);
   });
-  renderPnlCalendar();
+  if(pnlViewUserId){
+    loadDiaryViewOps(pnlViewUserId,pnlAcct,renderPnlCalendar);
+  } else {
+    renderPnlCalendar();
+  }
+}
+
+function initPnlPersonSelector(){
+  var wrap=$id('pnl-person-wrap');
+  if(!wrap)return;
+  var role=getRole();
+  if(role!=='gestor'){wrap.style.display='none';return;}
+  wrap.style.display='flex';
+  if(!supabase||!currentUser){return;}
+  var sel=$id('pnl-person-sel');
+  if(!sel)return;
+  var prevVal=pnlViewUserId||'';
+  (gestorProfiles.length>0?
+    new Promise(function(res){res({data:gestorProfiles});}):
+    supabase.from('profiles').select('*').order('name')
+  ).then(function(res){
+    var profiles=res.data||[];
+    gestorProfiles=profiles;
+    var html='<option value="">— Meu calendário —</option>';
+    profiles.forEach(function(p){
+      if(p.id===currentUser.id)return; // skip self
+      var roleLabel=p.role==='trader'?'Trader':p.role==='diretor'?'Diretor':p.role==='metodo2'?'Método 2':'Gestor';
+      html+='<option value="'+p.id+'">'+p.name+' ('+roleLabel+')</option>';
+    });
+    sel.innerHTML=html;
+    sel.value=prevVal;
+  });
+}
+
+function onPnlPersonChange(){
+  var sel=$id('pnl-person-sel');
+  if(!sel)return;
+  pnlViewUserId=sel.value||null;
+  var sub=$id('pnl-pg-sub');
+  if(sub){
+    if(pnlViewUserId){
+      var opt=sel.options[sel.selectedIndex];
+      sub.textContent='Calendário de '+(opt?opt.textContent.replace(/\s*\([^)]*\)$/,''):'trader')+' · clique no dia para ver o diário';
+    } else {
+      sub.textContent='Resultado diário por mês · clique no dia para ver o diário';
+    }
+  }
+  if(pnlViewUserId){
+    loadDiaryViewOps(pnlViewUserId,pnlAcct,renderPnlCalendar);
+  } else {
+    renderPnlCalendar();
+  }
 }
 
 function shiftPnlMonth(dir){
@@ -5465,7 +5523,12 @@ function goToPnlToday(){
 
 function renderPnlCalendar(){
   var grid=$id('pnl-grid'); if(!grid)return;
-  var allOps = JSON.parse(localStorage.getItem('dt_ops_'+pnlAcct)||'[]');
+  var allOps;
+  if(pnlViewUserId){
+    allOps = (diaryViewOpsCache[pnlViewUserId] && diaryViewOpsCache[pnlViewUserId][pnlAcct]) || [];
+  } else {
+    allOps = JSON.parse(localStorage.getItem('dt_ops_'+pnlAcct)||'[]');
+  }
   var today = new Date();
   var todayStr = today.toISOString().slice(0,10);
   var firstDay = new Date(pnlYear,pnlMonth,1).getDay();
@@ -5567,11 +5630,12 @@ function renderPnlCalendar(){
 }
 
 function openPnlDay(iso){
-  // Navigate to diary for this day
+  // Navigate to diary for this day (carrega o mesmo trader que estava sendo visualizado no PNL)
   var parts=iso.split('-');
   var yr=parseInt(parts[0]);
   var mo=parseInt(parts[1])-1;
   diaryYear=yr; diaryMonth=mo;
+  diaryViewUserId=pnlViewUserId||null;
   nav('diario');
   loadDiaryCache(yr,mo,function(){
     renderDiaryCalendar();
@@ -5585,7 +5649,12 @@ function renderPnl(){
   document.querySelectorAll('#pnl-acct-tabs .ptab').forEach(function(b){
     b.classList.toggle('on',b.getAttribute('data-pa')===pnlAcct);
   });
-  renderPnlCalendar();
+  initPnlPersonSelector();
+  if(pnlViewUserId){
+    loadDiaryViewOps(pnlViewUserId,pnlAcct,renderPnlCalendar);
+  } else {
+    renderPnlCalendar();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -6012,6 +6081,7 @@ function initDiaryPersonSelector(){
       html+='<option value="'+p.id+'">'+p.name+' ('+roleLabel+')</option>';
     });
     sel.innerHTML=html;
+    sel.value=diaryViewUserId||'';
   });
 }
 
