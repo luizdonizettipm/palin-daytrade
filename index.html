@@ -1023,6 +1023,13 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       </div>
     </div>
     <div class="meta-section-body" id="meta-body-mensal">
+      <div style="display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:1rem" onclick="event.stopPropagation()">
+        <button class="pnl-nav-btn" onclick="shiftMetasMes(-1)">‹</button>
+        <div id="metas-mes-lbl" style="font-family:var(--mono);font-size:.78rem;font-weight:700;color:var(--tx);min-width:150px;text-align:center">—</div>
+        <button class="pnl-nav-btn" onclick="shiftMetasMes(1)">›</button>
+        <button class="btn btn-g btn-sm" id="metas-mes-atual-btn" onclick="goToMetasMesAtual()" style="display:none;margin-left:.5rem">Mês atual</button>
+      </div>
+      <div id="metas-mes-note" style="display:none;text-align:center;font-family:var(--mono);font-size:.62rem;color:var(--tx3);margin:-.5rem 0 1rem">Resultado do mês selecionado comparado à meta configurada atualmente</div>
       <div id="mensal-content"></div>
     </div>
   </div>
@@ -4215,6 +4222,25 @@ function curMonthRange(){
   var to=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
   return{from:from,to:to};
 }
+// Meta Mensal: navegação por mês (0 = mês atual, -1 = mês anterior, etc)
+var metasMesOffset=0;
+function metaMonthRange(offset){
+  var now=new Date();
+  var base=new Date(now.getFullYear(),now.getMonth()+offset,1);
+  var from=new Date(base.getFullYear(),base.getMonth(),1).toISOString().slice(0,10);
+  var to=new Date(base.getFullYear(),base.getMonth()+1,0).toISOString().slice(0,10);
+  var label=MONTHS_PT[base.getMonth()]+' '+base.getFullYear();
+  return{from:from,to:to,label:label};
+}
+function shiftMetasMes(dir){
+  metasMesOffset+=dir;
+  if(metasMesOffset>0)metasMesOffset=0; // não deixa ir pro futuro
+  renderMetasMensal();
+}
+function goToMetasMesAtual(){
+  metasMesOffset=0;
+  renderMetasMensal();
+}
 // Get current quarter range
 function curQuarterRange(){
   var now=new Date();
@@ -4270,6 +4296,7 @@ function renderMetas(){
   // Account badge
   var badge=$id('metas-acct-badge');
   if(badge){badge.textContent=curAccount.toUpperCase();badge.className='acct-badge '+curAccount;}
+  metasMesOffset=0;
 
   var traders=loadTraders();
   loadLinkedTraderOps(traders, curAccount, function(){
@@ -4283,9 +4310,16 @@ function renderMetas(){
 function renderMetasMensal(){
   var traders=loadTraders();
   var mensais=loadMetasMensais();
-  var mr=curMonthRange();
+  var mr=metaMonthRange(metasMesOffset);
   var el=$id('mensal-content');
   if(!el)return;
+
+  var lblEl=$id('metas-mes-lbl');
+  if(lblEl)lblEl.textContent=mr.label+(metasMesOffset===0?' (atual)':'');
+  var atualBtn=$id('metas-mes-atual-btn');
+  if(atualBtn)atualBtn.style.display=metasMesOffset===0?'none':'';
+  var noteEl=$id('metas-mes-note');
+  if(noteEl)noteEl.style.display=metasMesOffset===0?'none':'';
 
   var totalAtingido=0, totalMeta=0, countAtingidos=0;
   var html='';
