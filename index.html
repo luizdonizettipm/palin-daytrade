@@ -478,6 +478,9 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-pnl"       onclick="nav('pnl')"><span class="sb-icon">📅</span>PNL</div>
   <div class="sb-item"    id="n-news"      onclick="nav('news')"><span class="sb-icon">📰</span>Notícias</div>
 
+  <div class="sb-sec">Conhecimento</div>
+  <div class="sb-item"    id="n-estudos"   onclick="nav('estudos')"><span class="sb-icon">📚</span>Estudos</div>
+
   <div class="sb-sec">Restrito</div>
   <div class="sb-item"    id="n-opcoes"    onclick="nav('opcoes')"><span class="sb-icon">📑</span>Opções</div>
   <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')"><span class="sb-icon">🪪</span>Cadastros</div>
@@ -821,6 +824,30 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <div id="opt-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhuma opção registrada neste filtro</div>
     </div>
   </div>
+</div>
+
+<!-- ESTUDOS (todos os perfis) -->
+<div class="pg" id="page-estudos">
+  <div class="pg-head">
+    <div>
+      <div class="pg-title">📚 Estudos</div>
+      <div class="pg-sub">Biblioteca compartilhada · todos podem consultar e adicionar material</div>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="openAddEstudo()">+ Adicionar Material</button>
+  </div>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
+    <input type="text" id="est-search" placeholder="Buscar por nome, descrição ou categoria..." oninput="renderEstudosGrid()" style="flex:1;min-width:220px;font-family:var(--mono);font-size:.72rem;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:.5rem .75rem;color:var(--tx)">
+    <div class="ptabs" id="est-ptabs" style="margin:0">
+      <button class="ptab on" data-et="all"   onclick="setEstFilter('all')">Todos</button>
+      <button class="ptab"    data-et="pdf"   onclick="setEstFilter('pdf')">PDF</button>
+      <button class="ptab"    data-et="video" onclick="setEstFilter('video')">Vídeo</button>
+      <button class="ptab"    data-et="doc"   onclick="setEstFilter('doc')">Docs</button>
+      <button class="ptab"    data-et="link"  onclick="setEstFilter('link')">Links</button>
+      <button class="ptab"    data-et="outro" onclick="setEstFilter('outro')">Outros</button>
+    </div>
+  </div>
+  <div class="trader-grid" id="est-grid"></div>
+  <div id="est-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum material encontrado</div>
 </div>
 
 <!-- CADASTROS (restrito: Gestor e Diretor) -->
@@ -1387,6 +1414,30 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 </div>
 
+<!-- ESTUDOS MODAL -->
+<div class="mbk" id="est-modal">
+  <div class="mdl">
+    <div class="mdl-title" id="est-modal-title">Adicionar Material</div>
+    <div style="display:flex;flex-direction:column;gap:.85rem">
+      <div class="fg"><label>Nome do conteúdo</label><input type="text" id="est-titulo" placeholder="ex: Introdução ao Price Action" maxlength="80"></div>
+      <div class="fg"><label>Categoria (opcional)</label><input type="text" id="est-categoria" placeholder="ex: Price Action, Gestão de risco" maxlength="40"></div>
+      <div class="fg"><label>Descrição (opcional)</label><input type="text" id="est-desc" maxlength="200"></div>
+      <div id="est-source-wrap" style="display:flex;flex-direction:column;gap:.65rem">
+        <div class="ptabs" id="est-src-tabs" style="margin:0">
+          <button class="ptab on" data-src="file" onclick="setEstSrc('file')">Arquivo</button>
+          <button class="ptab"    data-src="link" onclick="setEstSrc('link')">Link</button>
+        </div>
+        <div class="fg" id="est-file-wrap"><label>Arquivo (PDF, vídeo, Word, Excel, PowerPoint, imagem...) · máx. 50 MB</label><input type="file" id="est-file"></div>
+        <div class="fg" id="est-link-wrap" style="display:none"><label>Link (YouTube, Drive, site...) — use para vídeos grandes</label><input type="url" id="est-link" placeholder="https://..."></div>
+      </div>
+    </div>
+    <div class="mdl-foot">
+      <button class="btn btn-g" onclick="closeEstudoModal()">Cancelar</button>
+      <button class="btn btn-t" id="est-save-btn" onclick="saveEstudo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- METAS CONFIG MODAL -->
 <div class="mbk" id="metas-config-modal">
   <div class="mdl mdl-wide">
@@ -1619,6 +1670,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-pnl"       onclick="nav('pnl');mnavSel(this)"><span class="mi">📅</span>PNL</button>
   <button class="mnbtn"    id="mn-news"      onclick="nav('news');mnavSel(this)"><span class="mi">📰</span>News</button>
   <button class="mnbtn"    id="mn-opcoes"    onclick="nav('opcoes');mnavSel(this)"><span class="mi">📑</span>Opções</button>
+  <button class="mnbtn"    id="mn-estudos" onclick="nav('estudos');mnavSel(this)"><span class="mi">📚</span>Estudos</button>
   <button class="mnbtn"    id="mn-cadastros" onclick="nav('cadastros');mnavSel(this)"><span class="mi">🪪</span>Cadastros</button>
   <button class="mnbtn"    id="mn-metodo2admin" onclick="nav('metodo2admin');mnavSel(this)"><span class="mi">🧭</span>Método 2</button>
   <button class="mnbtn"    id="mn-metodo2" onclick="nav('metodo2');mnavSel(this)"><span class="mi">🚀</span>Aprovação</button>
@@ -1810,6 +1862,7 @@ function nav(page){
   else if(page==='export')renderExpPreview();
   else if(page==='config')renderConfig();
   else if(page==='opcoes')renderOpcoes();
+  else if(page==='estudos')renderEstudos();
   else if(page==='cadastros')renderCadastros();
   else if(page==='metodo2')renderMetodo2();
   else if(page==='metodo2admin')renderMetodo2Admin();
@@ -5697,20 +5750,20 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','metodo2admin','export','config'],
-  trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
-  viewer:  ['news'],
-  metodo2: ['today','history','pnl','metodo2']
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl','news','estudos'],
+  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros'],
+  viewer:  ['news','estudos'],
+  metodo2: ['today','history','pnl','estudos','metodo2']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','metodo2admin','export','config'],
-  trader:  ['today','history','analytics','stats','diario','pnl','news'],
-  diretor: ['mesa','metas','diario','pnl','news','opcoes','cadastros'],
-  viewer:  ['news'],
-  metodo2: ['today','history','pnl','metodo2']
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl','news','estudos'],
+  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros'],
+  viewer:  ['news','estudos'],
+  metodo2: ['today','history','pnl','estudos','metodo2']
 };
 
 function getRole(){
@@ -5725,7 +5778,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','opcoes','cadastros','metodo2','metodo2admin','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2','metodo2admin','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
@@ -7001,6 +7054,180 @@ function deleteMetodo2FromModal(){
     closeMetodo2Modal();
     toast('Participante excluído','g');
     renderMetodo2Admin();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ESTUDOS — biblioteca compartilhada (Supabase Storage privado + tabela estudos)
+// ══════════════════════════════════════════════════════════════════════
+var estudosCache=[], estEditId=null, estSrc='file', estFilter='all';
+var ESTUDOS_MAX_MB=50;
+var EST_ICONS={pdf:'📕',video:'🎬',doc:'📄',imagem:'🖼',link:'🔗',outro:'📎'};
+var EST_LABELS={pdf:'PDF',video:'Vídeo',doc:'Documento',imagem:'Imagem',link:'Link',outro:'Arquivo'};
+
+function estTipoFromFile(name,mime){
+  var ext=(name.split('.').pop()||'').toLowerCase();
+  mime=mime||'';
+  if(ext==='pdf')return'pdf';
+  if(/^(mp4|mov|webm|mkv|avi|m4v)$/.test(ext)||mime.indexOf('video/')===0)return'video';
+  if(/^(doc|docx|txt|rtf|odt|md|ppt|pptx|odp|xls|xlsx|csv|ods)$/.test(ext))return'doc';
+  if(mime.indexOf('image/')===0)return'imagem';
+  return'outro';
+}
+function estFmtSize(b){
+  if(!b)return'--';
+  if(b<1024*1024)return Math.max(1,Math.round(b/1024))+' KB';
+  return (b/1024/1024).toFixed(1).replace('.',',')+' MB';
+}
+function estCanManage(e){
+  return !!currentUser&&(e.uploaded_by===currentUser.id||getRole()==='gestor');
+}
+function setEstFilter(f){
+  estFilter=f;
+  document.querySelectorAll('#est-ptabs .ptab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-et')===f);});
+  renderEstudosGrid();
+}
+function loadEstudos(callback){
+  if(!supabase||!currentUser){estudosCache=[];if(callback)callback();return;}
+  supabase.from('estudos').select('*').order('created_at',{ascending:false}).then(function(res){
+    if(res.error){console.warn('estudos load error:',res.error.message);estudosCache=[];toast('Erro ao carregar estudos: '+res.error.message,'s');}
+    else estudosCache=res.data||[];
+    if(callback)callback();
+  });
+}
+function renderEstudos(){ loadEstudos(renderEstudosGrid); }
+
+function renderEstudosGrid(){
+  var grid=$id('est-grid'),empty=$id('est-empty');
+  if(!grid)return;
+  var q=(($id('est-search')||{}).value||'').trim().toLowerCase();
+  var list=estudosCache.filter(function(e){
+    if(estFilter==='outro'){ if(e.tipo!=='outro'&&e.tipo!=='imagem')return false; }
+    else if(estFilter!=='all'&&e.tipo!==estFilter)return false;
+    if(!q)return true;
+    return ((e.titulo||'')+' '+(e.descricao||'')+' '+(e.categoria||'')).toLowerCase().indexOf(q)>=0;
+  });
+  if(!list.length){grid.innerHTML='';if(empty)empty.style.display='';return;}
+  if(empty)empty.style.display='none';
+  var html='';
+  list.forEach(function(e,idx){
+    var tc=PALETTE[idx%PALETTE.length];
+    var dt=e.created_at?new Date(e.created_at).toLocaleDateString('pt-BR'):'--';
+    html+='<div class="tcard">';
+    html+='<div class="tcard-hd"><div style="display:flex;align-items:center;gap:.65rem"><div class="tavatar" style="background:'+tc+'22;border:1px solid '+tc+'44">'+(EST_ICONS[e.tipo]||'📎')+'</div><div><div class="tname">'+esc(e.titulo)+'</div><div class="tops">'+esc(EST_LABELS[e.tipo]||'Arquivo')+(e.categoria?' · '+esc(e.categoria):'')+'</div></div></div></div>';
+    html+='<div class="tcard-body">';
+    if(e.descricao)html+='<div style="font-family:var(--mono);font-size:.68rem;color:var(--tx2);padding:.2rem 0 .4rem;line-height:1.5">'+esc(e.descricao)+'</div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Enviado por</span><span>'+esc(e.uploaded_by_name||'--')+'</span></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Data</span><span>'+dt+'</span></div>';
+    if(e.tipo!=='link')html+='<div class="cad-row"><span class="cad-lbl">Tamanho</span><span>'+estFmtSize(e.file_size)+'</span></div>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:.5rem;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1);flex-wrap:wrap">';
+    html+='<button class="btn btn-t btn-sm" onclick="openEstudo(&quot;'+e.id+'&quot;,false)">'+(e.tipo==='link'?'🔗 Abrir link':'👁 Abrir')+'</button>';
+    if(e.tipo!=='link')html+='<button class="btn btn-g btn-sm" onclick="openEstudo(&quot;'+e.id+'&quot;,true)">⬇ Baixar</button>';
+    if(estCanManage(e)){
+      html+='<button class="btn btn-g btn-sm" onclick="openEditEstudo(&quot;'+e.id+'&quot;)">✏</button>';
+      html+='<button class="btn btn-del btn-sm" onclick="deleteEstudo(&quot;'+e.id+'&quot;)">🗑</button>';
+    }
+    html+='</div></div>';
+  });
+  grid.innerHTML=html;
+}
+
+function openEstudo(id,download){
+  var e=null;
+  for(var i=0;i<estudosCache.length;i++){if(estudosCache[i].id===id){e=estudosCache[i];break;}}
+  if(!e)return;
+  if(e.tipo==='link'){window.open(e.url,'_blank','noopener');return;}
+  var w=download?null:window.open('','_blank'); // abre antes do await p/ não ser bloqueado
+  supabase.storage.from('estudos').createSignedUrl(e.storage_path,3600,download?{download:e.file_name||true}:undefined).then(function(res){
+    if(res.error||!res.data){if(w)w.close();toast('Erro ao abrir: '+(res.error?res.error.message:'sem URL'),'s');return;}
+    if(download){var a=document.createElement('a');a.href=res.data.signedUrl;a.download=e.file_name||'';document.body.appendChild(a);a.click();a.remove();}
+    else if(w){w.opener=null;w.location.href=res.data.signedUrl;}
+  });
+}
+
+function setEstSrc(src){
+  estSrc=src;
+  document.querySelectorAll('#est-src-tabs .ptab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-src')===src);});
+  $id('est-file-wrap').style.display=src==='file'?'':'none';
+  $id('est-link-wrap').style.display=src==='link'?'':'none';
+}
+function openAddEstudo(){
+  estEditId=null;
+  setText('est-modal-title','Adicionar Material');
+  $id('est-titulo').value='';$id('est-categoria').value='';$id('est-desc').value='';
+  $id('est-file').value='';$id('est-link').value='';
+  $id('est-source-wrap').style.display='flex';
+  setEstSrc('file');
+  $id('est-modal').classList.add('show');
+}
+function openEditEstudo(id){
+  var e=null;
+  for(var i=0;i<estudosCache.length;i++){if(estudosCache[i].id===id){e=estudosCache[i];break;}}
+  if(!e)return;
+  estEditId=id;
+  setText('est-modal-title','Editar Material');
+  $id('est-titulo').value=e.titulo||'';$id('est-categoria').value=e.categoria||'';$id('est-desc').value=e.descricao||'';
+  $id('est-source-wrap').style.display='none';
+  $id('est-modal').classList.add('show');
+}
+function closeEstudoModal(){
+  $id('est-modal').classList.remove('show');
+  estEditId=null;
+}
+
+async function saveEstudo(){
+  var titulo=$id('est-titulo').value.trim();
+  if(!titulo){toast('Informe o nome do conteúdo','s');return;}
+  if(!supabase||!currentUser){toast('Sem conexão com o banco','s');return;}
+  var meta={titulo:titulo,categoria:$id('est-categoria').value.trim(),descricao:$id('est-desc').value.trim()};
+  var btn=$id('est-save-btn');
+  function busy(on){if(btn){btn.disabled=on;btn.textContent=on?'Salvando...':'Salvar';}}
+  var row=null,uploadedPath=null;
+
+  if(estEditId){
+    busy(true);
+    var up=await supabase.from('estudos').update(meta).eq('id',estEditId);
+    busy(false);
+    if(up.error){toast('Erro ao salvar: '+up.error.message,'s');return;}
+    closeEstudoModal();toast('Material atualizado','g');renderEstudos();return;
+  }
+
+  row=Object.assign({id:uid(),uploaded_by:currentUser.id,uploaded_by_name:(currentProfile&&currentProfile.name)||currentUser.email},meta);
+  if(estSrc==='link'){
+    var url=$id('est-link').value.trim();
+    if(!/^https?:\/\//i.test(url)){toast('Informe um link válido (começando com http)','s');return;}
+    row.tipo='link';row.url=url;
+  } else {
+    var f=$id('est-file').files[0];
+    if(!f){toast('Selecione um arquivo','s');return;}
+    if(f.size>ESTUDOS_MAX_MB*1024*1024){toast('Arquivo maior que '+ESTUDOS_MAX_MB+' MB — use a opção Link','s');return;}
+    var safe=f.name.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
+    uploadedPath=currentUser.id+'/'+Date.now()+'_'+safe;
+    busy(true);
+    var r=await supabase.storage.from('estudos').upload(uploadedPath,f,{cacheControl:'3600',upsert:false,contentType:f.type||undefined});
+    if(r.error){busy(false);toast('Erro no envio: '+r.error.message,'s');return;}
+    row.tipo=estTipoFromFile(f.name,f.type);
+    row.storage_path=uploadedPath;row.file_name=f.name;row.file_size=f.size;row.mime=f.type||null;
+  }
+  busy(true);
+  var ins=await supabase.from('estudos').insert(row);
+  busy(false);
+  if(ins.error){
+    if(uploadedPath)supabase.storage.from('estudos').remove([uploadedPath]);
+    toast('Erro ao salvar: '+ins.error.message,'s');return;
+  }
+  closeEstudoModal();toast('Material adicionado','g');renderEstudos();
+}
+
+function deleteEstudo(id){
+  var e=null;
+  for(var i=0;i<estudosCache.length;i++){if(estudosCache[i].id===id){e=estudosCache[i];break;}}
+  if(!e||!confirm('Excluir "'+e.titulo+'" para todos?'))return;
+  supabase.from('estudos').delete().eq('id',id).then(function(res){
+    if(res.error){toast('Erro ao excluir: '+res.error.message,'s');return;}
+    if(e.storage_path)supabase.storage.from('estudos').remove([e.storage_path]);
+    toast('Material excluído','g');renderEstudos();
   });
 }
 
