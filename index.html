@@ -1884,7 +1884,14 @@ function renderToday(){
   setBar('pb-meta',c.gains/CFG.meta*100);setBar('pb-sloss',c.stops/CFG.sloss*100);
   setBar('pb-meta2',c.gains/CFG.meta*100);setBar('pb-sloss2',c.stops/CFG.sloss*100);
   var tb=$id('t-today');if(!tb)return;
-  if(!ops.length){tb.innerHTML='<tr class="erow"><td colspan="7">Nenhuma operação hoje. Use o formulário acima.</td></tr>';return;}
+  if(!ops.length){
+    tb.innerHTML='<tr class="erow"><td colspan="7">Nenhuma operação hoje. Use o formulário acima.</td></tr>';
+    // zera os cards de custo do dia e atualiza o saldo (antes ficavam com o valor da renderização anterior)
+    var le=$id('k-liq-dia');if(le){le.textContent=fmtR(0);le.className='kval cm';}
+    setText('k-emol-dia',fmtR(0));setText('k-irrf-dia',fmtR(0));
+    renderSaldo();
+    return;
+  }
   var h='';
   ops.forEach(function(o,i){
     var ib=(o.id===c.bestId),iw=(o.id===c.worstId);
@@ -4854,6 +4861,17 @@ function onAuthSuccess(){
 
     showAppPage();
 
+    // Isolamento: se o navegador guardou dados de OUTRA pessoa (sessão que não passou por "Sair"),
+    // limpa antes de carregar — senão esses dados seriam enviados para a conta de quem entrou agora.
+    try{
+      var lsOwner=localStorage.getItem('dt_owner');
+      if(lsOwner&&lsOwner!==currentUser.id){
+        console.warn('localStorage de outro usuário detectado — limpando antes de carregar');
+        clearUserLocalStorage();
+      }
+      localStorage.setItem('dt_owner',currentUser.id);
+    }catch(e){}
+
     console.log('onAuthSuccess: user', currentUser.id, 'profile', currentProfile);
     // Load user data from Supabase into localStorage, then boot
     loadAllUserData(function(){
@@ -5075,7 +5093,7 @@ function loadAllUserData(callback){
       .then(function(res){
         if(res.data&&res.data.length){
           var ops=res.data.map(function(r){
-            return{id:r.id,date:r.date,time:r.time,ts:r.ts,papel:r.papel,qtd:r.qtd,liq:parseFloat(r.liq),pts:parseFloat(r.pts),tipo:r.tipo};
+            return{id:r.id,date:r.date,time:r.time,ts:r.ts,papel:r.papel,qtd:r.qtd,liq:parseFloat(r.liq),pts:parseFloat(r.pts),tipo:r.tipo,owner:r.owner_id};
           });
           localStorage.setItem('dt_director_'+acct,JSON.stringify(ops));
         }
@@ -5248,8 +5266,10 @@ function sbPushDirOps(ops, acct){
   var uid=currentUser.id;
   supabase.from('director_ops').delete().eq('owner_id',uid).eq('account_type',acct||curAccount)
     .then(function(){
-      if(!ops||!ops.length)return;
-      var rows=ops.map(function(o){
+      // só reenvia o que é do próprio usuário (operações de outro dono, carregadas só para visualização, não são tocadas)
+      var mine=(ops||[]).filter(function(o){return !o.owner||o.owner===uid;});
+      if(!mine.length)return;
+      var rows=mine.map(function(o){
         return{id:o.id,owner_id:uid,account_type:acct||curAccount,date:o.date,time:o.time,ts:o.ts,papel:o.papel,qtd:o.qtd,liq:o.liq,pts:o.pts,tipo:o.tipo};
       });
       supabase.from('director_ops').upsert(rows,{onConflict:'id'}).then(function(res){
