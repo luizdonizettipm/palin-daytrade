@@ -891,6 +891,16 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   </div>
 
   <div class="sec" style="margin-top:1.25rem">
+    <div class="sec-title">Meta e limites de risco</div>
+    <div id="m2-limits"></div>
+  </div>
+
+  <div class="sec" style="margin-top:1.25rem">
+    <div class="sec-title">Minhas operações no ciclo</div>
+    <div id="m2-ops"></div>
+  </div>
+
+  <div class="sec" style="margin-top:1.25rem">
     <div class="sec-title">Regras do seu programa</div>
     <div id="m2-rules" style="font-family:var(--mono);font-size:.72rem;color:var(--tx2);line-height:1.9"></div>
   </div>
@@ -1387,6 +1397,15 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="btn btn-del" id="cad-del-btn" onclick="deleteCadastroFromModal()" style="display:none;margin-right:auto">🗑 Excluir</button>
       <button class="btn btn-t" id="cad-save-btn" onclick="saveCadastro()">Salvar</button>
     </div>
+  </div>
+</div>
+
+<!-- MÉTODO 2 — DETALHE (operações, meta e stops) -->
+<div class="mbk" id="m2d-modal">
+  <div class="mdl" style="max-width:720px;max-height:88vh;overflow-y:auto">
+    <div class="mdl-title" id="m2d-title">Participante</div>
+    <div id="m2d-body"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn btn-g" onclick="closeM2Detail()">Fechar</button></div>
   </div>
 </div>
 
@@ -6907,13 +6926,66 @@ function metodo2CalcProgress(p, ops){
   var stopMaximoViolado = stopMaxPct>0 && capitalAtual <= pisoR;
   var metaAtingida = metaValor>0 && resultado>=metaValor;
 
+  var ddValor=Math.max(0,capitalIni-capitalAtual);
+  var stopMaxValor=capitalIni*stopMaxPct/100;
+  var usoDiarioPct=stopDiarioValor>0?Math.min(100,Math.max(0,-resultadoHoje)/stopDiarioValor*100):0;
+  var usoMaxPct=stopMaxValor>0?Math.min(100,ddValor/stopMaxValor*100):0;
   return {
+    metaPct:metaPct, stopDiarioPct:stopDiarioPct, stopMaxPct:stopMaxPct, stopMaxValor:stopMaxValor, ddValor:ddValor,
+    usoDiarioPct:usoDiarioPct, usoMaxPct:usoMaxPct, dataInicio:dataInicio, periodOps:periodOps,
     capitalIni:capitalIni, resultado:resultado, capitalAtual:capitalAtual,
     metaValor:metaValor, pct:Math.min(pct,999), diasRestantes:diasRestantes, prazoDias:prazoDias,
     pisoR:pisoR, stopDiarioValor:stopDiarioValor, resultadoHoje:resultadoHoje,
     stopDiarioViolado:stopDiarioViolado, stopMaximoViolado:stopMaximoViolado, metaAtingida:metaAtingida
   };
 }
+
+// ── Blocos compartilhados: barras de meta/stops + tabela de operações ──
+function m2Bar(label,rightTxt,pct,cls,sub){
+  return '<div style="margin-bottom:1rem"><div style="display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);margin-bottom:.35rem"><span style="font-size:.74rem;font-weight:700">'+label+'</span><span style="font-size:.7rem;color:var(--tx2)">'+rightTxt+'</span></div>'+
+    '<div class="meta-bar-bg" style="height:10px"><div class="meta-bar-fill '+cls+'" style="width:'+Math.max(0,Math.min(pct,100))+'%"></div></div>'+
+    (sub?'<div style="font-family:var(--mono);font-size:.64rem;color:var(--tx3);margin-top:.25rem">'+sub+'</div>':'')+'</div>';
+}
+function m2LimitsHtml(c){
+  var h='';
+  h+=m2Bar('🎯 Meta '+c.metaPct+'%',(c.resultado>=0?'+':'')+fmtR(c.resultado)+' / '+fmtR(c.metaValor)+' · '+c.pct+'%',c.pct,c.metaAtingida?'g':c.pct>70?'a':'p','Faltam '+fmtR(Math.max(0,c.metaValor-c.resultado))+' para a meta');
+  h+=m2Bar('🛑 Stop diário '+c.stopDiarioPct+'%',fmtR(Math.min(0,c.resultadoHoje))+' / -'+fmtR(c.stopDiarioValor)+' · '+Math.round(c.usoDiarioPct)+'% usado',c.usoDiarioPct,c.stopDiarioViolado?'w':(c.usoDiarioPct>=60?'w':'a'),c.stopDiarioViolado?'⚠ ATINGIDO hoje':'Resultado de hoje: '+fmtR(c.resultadoHoje));
+  h+=m2Bar('⛔ Stop máximo '+c.stopMaxPct+'%','-'+fmtR(c.ddValor)+' / -'+fmtR(c.stopMaxValor)+' · '+Math.round(c.usoMaxPct)+'% usado',c.usoMaxPct,c.stopMaximoViolado?'w':(c.usoMaxPct>=60?'w':'a'),c.stopMaximoViolado?'⚠ ATINGIDO — piso '+fmtR(c.pisoR):'Piso de capital: '+fmtR(c.pisoR));
+  return h;
+}
+function m2OpsTableHtml(ops){
+  if(!ops||!ops.length) return '<div style="font-family:var(--mono);font-size:.74rem;color:var(--tx3);padding:.5rem">Nenhuma operação no ciclo.</div>';
+  var byDay={};
+  ops.forEach(function(o){(byDay[o.date]=byDay[o.date]||[]).push(o);});
+  var h='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.72rem"><tr style="color:var(--tx2);text-align:left"><th style="padding:.35rem">Data</th><th>Hora</th><th>Tipo</th><th style="text-align:right">Pts</th><th style="text-align:right">Resultado</th></tr>';
+  var acc=0;
+  Object.keys(byDay).sort().reverse().forEach(function(d){
+    var arr=byDay[d].slice().sort(function(a,b){return (a.ts||0)-(b.ts||0)||String(a.time).localeCompare(String(b.time));});
+    var tot=0,g=0,st=0;
+    arr.forEach(function(o){
+      var v=o.tipo==='GAIN'?(o.val||0):-(o.val||0);tot+=v;if(o.tipo==='GAIN')g++;else st++;
+      h+='<tr style="border-top:1px solid var(--b1)"><td style="padding:.3rem .35rem">'+fmtDate(d)+'</td><td>'+(o.time||'')+'</td><td style="color:'+(o.tipo==='GAIN'?'var(--gain)':'var(--stop)')+'">'+o.tipo+'</td><td style="text-align:right">'+(o.tipo==='GAIN'?'+':'-')+(o.pts||0)+'</td><td style="text-align:right;color:'+(v>=0?'var(--gain)':'var(--stop)')+'">'+fmtR(v)+'</td></tr>';
+    });
+    h+='<tr style="background:var(--bg);font-weight:700"><td style="padding:.35rem" colspan="2">Total '+fmtDate(d)+'</td><td>'+g+'G/'+st+'S</td><td></td><td style="text-align:right;color:'+(tot>=0?'var(--gain)':'var(--stop)')+'">'+fmtR(tot)+'</td></tr>';
+  });
+  h+='</table></div>';
+  return h;
+}
+function openM2Detail(id){
+  var p=null;metodo2AdminList.forEach(function(x){if(x.id===id)p=x;});if(!p)return;
+  var acct=p.status==='aprovado'?'real':'demo';
+  var ops=(metodo2AdminOpsCache[p.user_id]&&metodo2AdminOpsCache[p.user_id][acct])||[];
+  var c=metodo2CalcProgress(p,ops);
+  setText('m2d-title',(p.name||'')+' — '+(statusLabels2[p.status]||p.status)+' · '+acct.toUpperCase());
+  var k='<div class="kgrid" style="margin-bottom:1rem">'+
+    '<div class="kcard ka"><div class="klbl">Capital inicial</div><div class="kval">'+fmtR(c.capitalIni)+'</div></div>'+
+    '<div class="kcard '+(c.resultado>=0?'kg':'ks')+'"><div class="klbl">Resultado do ciclo</div><div class="kval">'+(c.resultado>=0?'+':'')+fmtR(c.resultado)+'</div></div>'+
+    '<div class="kcard kt"><div class="klbl">Capital atual</div><div class="kval">'+fmtR(c.capitalAtual)+'</div></div>'+
+    '<div class="kcard kw"><div class="klbl">Operações</div><div class="kval">'+c.periodOps.length+'</div></div></div>';
+  setHtml('m2d-body',k+m2LimitsHtml(c)+'<div style="font-family:var(--mono);font-size:.7rem;color:var(--tx2);margin:1rem 0 .4rem;text-transform:uppercase;letter-spacing:.08em">Operações do ciclo (desde '+fmtDate(c.dataInicio)+')</div>'+m2OpsTableHtml(c.periodOps));
+  $id('m2d-modal').classList.add('show');
+}
+function closeM2Detail(){$id('m2d-modal').classList.remove('show');}
 
 var statusLabels2={simulador:'Simulador',avaliacao:'Em avaliação',aprovado:'Conta Real',eliminado:'Eliminado'};
 var statusColors2={simulador:'var(--teal)',avaliacao:'var(--warn)',aprovado:'var(--gain)',eliminado:'var(--stop)'};
@@ -6983,6 +7055,8 @@ function renderMetodo2(){
     rules+='<div>• Prazo do ciclo: '+c.prazoDias+' dias (início em '+fmtBirthdate(p.data_inicio)+')</div>';
     if(p.obs) rules+='<div>• Observação: '+esc(p.obs)+'</div>';
     setHtml('m2-rules',rules);
+    setHtml('m2-limits',m2LimitsHtml(c));
+    setHtml('m2-ops',m2OpsTableHtml(c.periodOps));
   });
 }
 
@@ -7005,7 +7079,7 @@ function loadMetodo2AdminOps(list, callback){
     supabase.from('operations').select('*').eq('user_id',p.user_id).eq('account_type',acct).then(function(res){
       if(!metodo2AdminOpsCache[p.user_id]) metodo2AdminOpsCache[p.user_id]={};
       metodo2AdminOpsCache[p.user_id][acct]=(res.data||[]).map(function(r){
-        return{date:r.date,time:r.time,tipo:r.tipo,val:parseFloat(r.val||0)};
+        return{id:r.id,date:r.date,time:r.time,ts:r.ts,tipo:r.tipo,pts:parseFloat(r.pts||0),val:parseFloat(r.val||0)};
       });
       done();
     });
@@ -7045,6 +7119,11 @@ function renderMetodo2AdminGrid(){
     html+='<div class="cad-row"><span class="cad-lbl">Capital atual</span><span>'+fmtR(c.capitalAtual)+'</span></div>';
     html+='<div class="cad-row"><span class="cad-lbl">Progresso da meta</span><span>'+c.pct+'%</span></div>';
     html+='<div class="meta-bar-bg" style="margin:.4rem 0"><div class="meta-bar-fill '+(c.metaAtingida?'g':c.pct>70?'a':'p')+'" style="width:'+Math.max(0,Math.min(c.pct,100))+'%"></div></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Stop diário ('+c.stopDiarioPct+'%)</span><span>'+Math.round(c.usoDiarioPct)+'% usado</span></div>';
+    html+='<div class="meta-bar-bg" style="margin:.3rem 0"><div class="meta-bar-fill '+(c.usoDiarioPct>=60?'w':'a')+'" style="width:'+Math.max(2,c.usoDiarioPct)+'%"></div></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Stop máximo ('+c.stopMaxPct+'%)</span><span>'+Math.round(c.usoMaxPct)+'% usado</span></div>';
+    html+='<div class="meta-bar-bg" style="margin:.3rem 0"><div class="meta-bar-fill '+(c.usoMaxPct>=60?'w':'a')+'" style="width:'+Math.max(2,c.usoMaxPct)+'%"></div></div>';
+    html+='<div class="cad-row"><span class="cad-lbl">Operações no ciclo</span><span>'+c.periodOps.length+'</span></div>';
     html+='<div class="cad-row"><span class="cad-lbl">Dias restantes</span><span>'+c.diasRestantes+' / '+c.prazoDias+'</span></div>';
     if(c.stopMaximoViolado) html+='<div class="cad-row"><span class="cad-lbl">⚠ Stop máximo</span><span class="cs">Atingido</span></div>';
     if(c.stopDiarioViolado) html+='<div class="cad-row"><span class="cad-lbl">⚠ Stop diário (hoje)</span><span class="cs">Atingido</span></div>';
@@ -7052,6 +7131,7 @@ function renderMetodo2AdminGrid(){
     html+='<div style="display:flex;gap:.5rem;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1);flex-wrap:wrap">';
     if(p.status!=='aprovado' && p.status!=='eliminado') html+='<button class="btn btn-t btn-sm" onclick="approveMetodo2(&quot;'+p.id+'&quot;)">✅ Aprovar p/ Real</button>';
     if(p.status!=='eliminado') html+='<button class="btn btn-del btn-sm" onclick="eliminateMetodo2(&quot;'+p.id+'&quot;)">⛔ Eliminar</button>';
+    html+='<button class="btn btn-p btn-sm" onclick="openM2Detail(&quot;'+p.id+'&quot;)">📋 Ver operações</button>';
     html+='<button class="btn btn-g btn-sm" onclick="openEditMetodo2Participant(&quot;'+p.id+'&quot;)">✏ Editar</button>';
     html+='</div>';
     html+='</div>';
