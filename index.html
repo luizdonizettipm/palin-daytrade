@@ -3479,7 +3479,7 @@ function exportMesaCSV(opts){
   traders.forEach(function(t){
     var ops=tOpsP(t.id);
     if(!ops.length){rows.push(t.name+sep+'0'+sep+'-'+sep+'-'+sep+'-'+sep+'-'+sep+'-'+sep+'-');return;}
-    var ms=calcMensal(ops);mesaLiqTotal+=ms.liquidoMensal;traderLiqTotal+=ms.liquidoMensal;mesaCount++;
+    var ms=calcMensalWith(ops,getCustosForTrader(t));mesaLiqTotal+=ms.liquidoMensal;traderLiqTotal+=ms.liquidoMensal;mesaCount++;
     rows.push(t.name+sep+ops.length+sep+
       fmtR(ms.brutoBruto).replace(/\./g,'').replace(',','.')+sep+
       ('-'+fmtR(ms.totalEmol).replace(/\./g,'').replace(',','.'))+sep+
@@ -3514,20 +3514,23 @@ function renderExportMesaPreview(){
 function renderExportMesaPreviewNow(){
   var box=$id('em-prev');if(!box||!$id('em-per'))return;
   var per=$id('em-per').value, withDir=$id('em-dir').checked;
-  var rows=[],total=0;
+  var rows=[],tb=0,te=0,tl=0;
   loadTraders().forEach(function(t){
     var ops=mesaOpsRange(t,per,'em-from','em-to');
-    var liq=ops.length?calcMensal(ops).liquidoMensal:0;total+=liq;
-    rows.push({n:t.name,ops:ops.length,liq:liq});
+    var ms=ops.length?calcMensalWith(ops,getCustosForTrader(t)):{brutoBruto:0,totalEmol:0,liquidoMensal:0};
+    tb+=ms.brutoBruto;te+=ms.totalEmol;tl+=ms.liquidoMensal;
+    rows.push({n:t.name,ops:ops.length,b:ms.brutoBruto,e:ms.totalEmol,l:ms.liquidoMensal});
   });
   if(withDir){
     var d=filterByPeriod(loadDirOps(),per,'em-from','em-to'),dl=0;
-    d.forEach(function(o){dl+=o.liq;});total+=dl;
-    rows.push({n:'Altair (Diretor)',ops:d.length,liq:dl});
+    d.forEach(function(o){dl+=o.liq;});tb+=dl;tl+=dl;
+    rows.push({n:'Altair (Diretor)',ops:d.length,b:dl,e:0,l:dl});
   }
-  var h='<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.74rem"><tr style="color:var(--tx2);text-align:left"><th style="padding:.4rem">Participante</th><th>Ops</th><th style="text-align:right">Líquido</th></tr>';
-  rows.forEach(function(r){h+='<tr style="border-top:1px solid var(--b2)"><td style="padding:.4rem">'+r.n+'</td><td>'+r.ops+'</td><td style="text-align:right;color:'+(r.liq>=0?'var(--teal)':'var(--red,#ef4444)')+'">'+fmtR(r.liq)+'</td></tr>';});
-  h+='<tr style="border-top:2px solid var(--b2);font-weight:700"><td style="padding:.4rem">TOTAL DA MESA</td><td></td><td style="text-align:right">'+fmtR(total)+'</td></tr></table>';
+  function c(v){return '<td style="text-align:right;color:'+(v>=0?'var(--teal)':'var(--red,#ef4444)')+'">'+fmtR(v)+'</td>';}
+  var h='<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.74rem"><tr style="color:var(--tx2);text-align:left"><th style="padding:.4rem">Participante</th><th>Ops</th><th style="text-align:right">Bruto</th><th style="text-align:right">Emolumentos</th><th style="text-align:right">Líquido (após custos/IR)</th></tr>';
+  rows.forEach(function(r){h+='<tr style="border-top:1px solid var(--b2)"><td style="padding:.4rem">'+r.n+'</td><td>'+r.ops+'</td>'+c(r.b)+'<td style="text-align:right">'+(r.e?'-'+fmtR(r.e):'—')+'</td>'+c(r.l)+'</tr>';});
+  h+='<tr style="border-top:2px solid var(--b2);font-weight:700"><td style="padding:.4rem">TOTAL DA MESA</td><td></td>'+c(tb)+'<td style="text-align:right">'+(te?'-'+fmtR(te):'—')+'</td>'+c(tl)+'</tr></table>';
+  h+='<p style="font-family:var(--mono);font-size:.66rem;color:var(--tx3);margin-top:.75rem;line-height:1.6">Bruto = resultado em R$ igual ao das Estatísticas/Mesa. Líquido = bruto − emolumentos − IRRF. Altair: valor líquido do Tryd (sem recálculo).</p>';
   box.innerHTML=h;
 }
 
