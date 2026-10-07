@@ -5782,7 +5782,10 @@ function renderPnlCalendar(){
   // Stats
   var totalVal=0, gainDays=0, stopDays=0, opDays=0;
   var vals=Object.values(dayMap);
-  vals.forEach(function(d){totalVal+=d.val;if(d.val>0)gainDays++;else stopDays++;opDays++;});
+  var gainSum=0, lossSum=0, lossDays=0;
+  vals.forEach(function(d){totalVal+=d.val;if(d.val>0){gainDays++;gainSum+=d.val;}else{stopDays++;if(d.val<0){lossSum+=d.val;lossDays++;}}opDays++;});
+  var avgLoss=lossDays>0?lossSum/lossDays:0;
+  var avgGain=gainDays>0?gainSum/gainDays:0;
   var bestDay=vals.length?Math.max.apply(null,vals.map(function(d){return d.val;})):0;
   var worstDay=vals.length?Math.min.apply(null,vals.map(function(d){return d.val;})):0;
 
@@ -5819,6 +5822,8 @@ function renderPnlCalendar(){
       '<div class="pnl-stat"><div class="pnl-stat-lbl">Gains dias</div><div class="pnl-stat-val cg">'+gainDays+'</div></div>'+
       '<div class="pnl-stat"><div class="pnl-stat-lbl">Stop dias</div><div class="pnl-stat-val cs">'+stopDays+'</div></div>'+
       '<div class="pnl-stat"><div class="pnl-stat-lbl">Melhor dia</div><div class="pnl-stat-val cg">'+(bestDay?'+'+fmtR(bestDay):'—')+'</div></div>'+
+      '<div class="pnl-stat"><div class="pnl-stat-lbl">Média ganho/dia</div><div class="pnl-stat-val cg">'+(gainDays?'+'+fmtR(avgGain):'—')+'</div></div>'+
+      '<div class="pnl-stat" title="Perda diária máxima para manter a relação 2:1 (média de ganho ÷ 2)"><div class="pnl-stat-lbl">Perda máx. 2:1</div><div class="pnl-stat-val cs">'+(gainDays?'-'+fmtR(avgGain/2):'—')+'</div>'+(lossDays?'<div style="font-family:var(--mono);font-size:.55rem;color:'+(Math.abs(avgLoss)<=avgGain/2?'var(--gain)':'var(--stop)')+'">média real: '+fmtR(avgLoss)+'</div>':'')+'</div>'+
       '<div class="pnl-stat"><div class="pnl-stat-lbl">Pior dia</div><div class="pnl-stat-val cs">'+(worstDay<0?fmtR(worstDay):'—')+'</div></div>';
   }
   var streakEl=$id('pnl-streak');
