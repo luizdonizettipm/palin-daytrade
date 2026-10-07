@@ -3310,6 +3310,15 @@ function showPausaAlert(){
 // ═══════════════════════════════════════════════════════════════════
 // MESA CSV REPORT
 // ═══════════════════════════════════════════════════════════════════
+function mesaOpsRange(t,per,fId,tId){
+  var csv=filterByPeriod(loadTOps(t.id),per,fId,tId);
+  var pers=filterByPeriod(getLinkedOps(t,curAccount),per,fId,tId);
+  var seen={},m=[];
+  csv.forEach(function(o){seen[o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts]=1;m.push(o);});
+  pers.forEach(function(o){var k=o.date+'_'+o.time+'_'+o.tipo+'_'+o.pts;if(!seen[k]){seen[k]=1;m.push(o);}});
+  m.sort(function(a,b){return a.ts-b.ts;});
+  return m;
+}
 function exportMesaCSV(opts){
   opts=opts||{};
   var per=opts.period||mesaPeriod, fId=opts.fromId||'mp-from', tId=opts.toId||'mp-to';
@@ -3318,7 +3327,7 @@ function exportMesaCSV(opts){
   var dirAll=withDir?filterByPeriod(loadDirOps(),per,fId,tId):[];
   if(!traders.length&&!dirAll.length){toast('Nenhum dado da mesa no período','s');return;}
   function fnum(v){return fmtR(v).replace(/\./g,'').replace(',','.');}
-  function tOpsP(tid){return filterByPeriod(loadTOps(tid),per,fId,tId);}
+  function tOpsP(tid){var tr=traders.filter(function(x){return x.id===tid;})[0];return mesaOpsRange(tr,per,fId,tId);}
   var rows=['﻿'];
   var sep=';';
 
@@ -3497,14 +3506,17 @@ function exportMesaCSV(opts){
 // ── ABA EXPORTAR MESA (traders + Altair) ─────────────────────────────
 function toggleEmRange(){var r=$id('em-range');if(r)r.style.display=$id('em-per').value==='custom'?'flex':'none';}
 function exportMesaFromTab(){
-  exportMesaCSV({period:$id('em-per').value,fromId:'em-from',toId:'em-to',includeDir:$id('em-dir').checked});
+  loadLinkedTraderOps(loadTraders(),curAccount,function(){exportMesaCSV({period:$id('em-per').value,fromId:'em-from',toId:'em-to',includeDir:$id('em-dir').checked});});
 }
 function renderExportMesaPreview(){
+  loadLinkedTraderOps(loadTraders(),curAccount,renderExportMesaPreviewNow);
+}
+function renderExportMesaPreviewNow(){
   var box=$id('em-prev');if(!box||!$id('em-per'))return;
   var per=$id('em-per').value, withDir=$id('em-dir').checked;
   var rows=[],total=0;
   loadTraders().forEach(function(t){
-    var ops=filterByPeriod(loadTOps(t.id),per,'em-from','em-to');
+    var ops=mesaOpsRange(t,per,'em-from','em-to');
     var liq=ops.length?calcMensal(ops).liquidoMensal:0;total+=liq;
     rows.push({n:t.name,ops:ops.length,liq:liq});
   });
@@ -3514,8 +3526,8 @@ function renderExportMesaPreview(){
     rows.push({n:'Altair (Diretor)',ops:d.length,liq:dl});
   }
   var h='<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.74rem"><tr style="color:var(--tx2);text-align:left"><th style="padding:.4rem">Participante</th><th>Ops</th><th style="text-align:right">Líquido</th></tr>';
-  rows.forEach(function(r){h+='<tr style="border-top:1px solid var(--b2)"><td style="padding:.4rem">'+r.n+'</td><td>'+r.ops+'</td><td style="text-align:right;color:'+(r.liq>=0?'var(--teal)':'var(--red,#ef4444)')+'">R$ '+fmtR(r.liq)+'</td></tr>';});
-  h+='<tr style="border-top:2px solid var(--b2);font-weight:700"><td style="padding:.4rem">TOTAL DA MESA</td><td></td><td style="text-align:right">R$ '+fmtR(total)+'</td></tr></table>';
+  rows.forEach(function(r){h+='<tr style="border-top:1px solid var(--b2)"><td style="padding:.4rem">'+r.n+'</td><td>'+r.ops+'</td><td style="text-align:right;color:'+(r.liq>=0?'var(--teal)':'var(--red,#ef4444)')+'">'+fmtR(r.liq)+'</td></tr>';});
+  h+='<tr style="border-top:2px solid var(--b2);font-weight:700"><td style="padding:.4rem">TOTAL DA MESA</td><td></td><td style="text-align:right">'+fmtR(total)+'</td></tr></table>';
   box.innerHTML=h;
 }
 
