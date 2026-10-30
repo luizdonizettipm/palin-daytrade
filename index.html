@@ -490,6 +490,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-metodo2"    onclick="nav('metodo2')"><span class="sb-icon">🚀</span>Minha Aprovação</div>
 
   <div class="sb-sec">Sistema</div>
+  <div class="sb-item"    id="n-certificados" onclick="nav('certificados')"><span class="sb-icon">🏅</span>Certificados</div>
   <div class="sb-item"    id="n-exportmesa" onclick="nav('exportmesa')"><span class="sb-icon">📊</span>Exportar Mesa</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
   <div class="sb-item"    id="n-config"    onclick="nav('config')"><span class="sb-icon">⚙️</span>Config</div>
@@ -1119,6 +1120,41 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <button class="ptab"    data-rp="today" onclick="setRP('today')">Hoje</button>
   </div>
   <div id="rank-content"></div>
+</div>
+
+<!-- CERTIFICADOS -->
+<div class="pg" id="page-certificados">
+  <div class="pg-head"><div><div class="pg-title">🏅 Certificados</div><div class="pg-sub">Reconhecimento dos melhores do mês — gere a imagem e compartilhe com o grupo</div></div></div>
+  <div style="display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:1.25rem;align-items:start" id="cert-layout">
+    <div class="sec" style="margin:0"><div class="sec-head"><div class="sec-title">Configuração</div></div>
+      <div class="sec-body" style="display:flex;flex-direction:column;gap:.8rem">
+        <div class="fg"><label>Mês de referência</label><input type="month" id="cert-month" onchange="certAutoPick()"></div>
+        <div class="fg"><label>Categoria</label>
+          <select id="cert-cat" onchange="certAutoPick()">
+            <option value="consistencia">Consistência e Disciplina</option>
+            <option value="resultado">Melhor Resultado do Mês</option>
+            <option value="winrate">Melhor Taxa de Acerto</option>
+            <option value="custom">Personalizado…</option>
+          </select></div>
+        <div class="fg" id="cert-custom-wrap" style="display:none"><label>Título do prêmio</label><input type="text" id="cert-custom-title" placeholder="Ex.: Evolução do Mês" oninput="drawCertificate()"></div>
+        <div class="fg"><label>Premiado</label><select id="cert-who" onchange="certWhoChanged()"></select></div>
+        <div class="fg" id="cert-name-wrap" style="display:none"><label>Nome do premiado</label><input type="text" id="cert-name" oninput="drawCertificate()"></div>
+        <div class="fg"><label>Mensagem (editável)</label><textarea id="cert-msg" rows="4" oninput="certMsgEdited=true;drawCertificate()"></textarea></div>
+        <div class="fg"><label>Entidade</label><input type="text" id="cert-org" value="Mesa Proprietária Palin" oninput="drawCertificate()"></div>
+        <div class="frow"><div class="fg"><label>Assinatura 1</label><input type="text" id="cert-sig1" value="Luis Carlos" oninput="drawCertificate()"><input type="text" id="cert-sig1r" value="Gestor de Risco" style="margin-top:.3rem" oninput="drawCertificate()"></div>
+        <div class="fg"><label>Assinatura 2</label><input type="text" id="cert-sig2" value="Altair" oninput="drawCertificate()"><input type="text" id="cert-sig2r" value="Diretor" style="margin-top:.3rem" oninput="drawCertificate()"></div></div>
+        <div class="fg"><label>Formato</label><select id="cert-fmt" onchange="drawCertificate()"><option value="land">Paisagem (impressão / tela)</option><option value="sq">Quadrado (WhatsApp / Instagram)</option></select></div>
+        <label style="display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.72rem;color:var(--tx2)"><input type="checkbox" id="cert-stats" checked onchange="drawCertificate()"> Mostrar indicadores (dias positivos, disciplina…)</label>
+        <label style="display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.72rem;color:var(--tx2)"><input type="checkbox" id="cert-money" onchange="drawCertificate()"> Mostrar resultado em R$ (padrão: oculto)</label>
+        <button class="btn btn-p" onclick="downloadCertificate()" style="display:block;width:100%">⬇ Baixar certificado (PNG)</button>
+      </div>
+    </div>
+    <div>
+      <div class="sec" style="margin:0 0 1rem"><div class="sec-body" style="padding:.75rem"><canvas id="cert-canvas" style="width:100%;height:auto;border-radius:6px;display:block"></canvas></div></div>
+      <div class="sec" style="margin:0"><div class="sec-head"><div class="sec-title">Candidatos do mês — critério da categoria</div></div><div class="sec-body"><div id="cert-cands" style="overflow-x:auto"></div>
+        <p style="font-family:var(--mono);font-size:.66rem;color:var(--tx3);line-height:1.7;margin-top:.75rem"><b>Consistência e Disciplina</b> = média de (a) % de dias positivos e (b) % de dias em que a perda ficou dentro do limite 2:1 (perda do dia ≤ metade da média de ganho diário do próprio trader). Mínimo de 3 dias operados. <b>Melhor Resultado</b> = maior resultado em R$ no mês. <b>Taxa de Acerto</b> = % de gains, mínimo de 20 operações. A sugestão automática pode ser trocada em "Premiado".</p></div></div>
+    </div>
+  </div>
 </div>
 
 <!-- EXPORTAR MESA -->
@@ -1898,6 +1934,7 @@ function nav(page){
   else if(page==='ranking')renderRanking();
   else if(page==='export')renderExpPreview();
   else if(page==='exportmesa')renderExportMesaPreview();
+  else if(page==='certificados')renderCertificados();
   else if(page==='config')renderConfig();
   else if(page==='opcoes')renderOpcoes();
   else if(page==='estudos')renderEstudos();
@@ -3551,6 +3588,198 @@ function renderExportMesaPreviewNow(){
   h+='<tr style="border-top:2px solid var(--b2);font-weight:700"><td style="padding:.4rem">TOTAL DA MESA</td><td></td>'+c(tb)+'<td style="text-align:right">'+(te?'-'+fmtR(te):'—')+'</td>'+c(tl)+'</tr></table>';
   h+='<p style="font-family:var(--mono);font-size:.66rem;color:var(--tx3);margin-top:.75rem;line-height:1.6">Bruto = resultado em R$ igual ao das Estatísticas/Mesa. Líquido = bruto − emolumentos − IRRF. Altair: valor líquido do Tryd (sem recálculo).</p>';
   box.innerHTML=h;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CERTIFICADOS — melhores do mês (imagem PNG gerada em canvas)
+// ══════════════════════════════════════════════════════════════════════
+var certMsgEdited=false, certCands=[], certCatLabels={consistencia:'Consistência e Disciplina',resultado:'Melhor Resultado do Mês',winrate:'Melhor Taxa de Acerto'};
+
+function certOpVal(o){var v=o.val||((o.pts||0)*(CFG.ptval||0.20));return o.tipo==='GAIN'?v:-v;}
+
+function certMetrics(t,ym){
+  var ops=mesaOpsRange(t,'all','','').filter(function(o){return o.date&&o.date.slice(0,7)===ym;});
+  var byDay={};ops.forEach(function(o){byDay[o.date]=(byDay[o.date]||0)+certOpVal(o);});
+  var days=Object.keys(byDay),dv=days.map(function(d){return byDay[d];});
+  var gainDays=dv.filter(function(v){return v>0;}),net=dv.reduce(function(a,b){return a+b;},0);
+  var avgGain=gainDays.length?gainDays.reduce(function(a,b){return a+b;},0)/gainDays.length:0;
+  var limit=avgGain/2;
+  var within=dv.filter(function(v){return avgGain>0&&v>=-limit;}).length;
+  var gains=ops.filter(function(o){return o.tipo==='GAIN';}).length;
+  var pctPos=days.length?gainDays.length/days.length*100:0;
+  var pctDisc=days.length?within/days.length*100:0;
+  return{t:t,nOps:ops.length,nDays:days.length,net:net,avgGain:avgGain,pctPos:pctPos,pctDisc:pctDisc,
+         score:(pctPos+pctDisc)/2,wr:ops.length?gains/ops.length*100:0};
+}
+
+function certRank(cat,ym){
+  var list=loadTraders().map(function(t){return certMetrics(t,ym);});
+  var elig=list.filter(function(m){
+    if(cat==='consistencia')return m.nDays>=3;
+    if(cat==='winrate')return m.nOps>=20;
+    return m.nOps>0;
+  });
+  var key=cat==='consistencia'?'score':cat==='winrate'?'wr':'net';
+  elig.sort(function(a,b){return b[key]-a[key]||b.net-a.net;});
+  return{elig:elig,all:list,key:key};
+}
+
+function renderCertificados(){
+  var mi=$id('cert-month');
+  if(mi&&!mi.value){var n=new Date();n.setDate(1);n.setMonth(n.getMonth()-(new Date().getDate()<=7?1:0));mi.value=n.toISOString().slice(0,7);}
+  var who=$id('cert-who');
+  if(who&&!who.options.length){
+    var h='';loadTraders().forEach(function(t){h+='<option value="'+t.id+'">'+esc(t.name)+'</option>';});
+    h+='<option value="__custom">Outro (digitar nome)…</option>';who.innerHTML=h;
+  }
+  loadLinkedTraderOps(loadTraders(),curAccount,function(){certAutoPick();});
+}
+
+function certAutoPick(){
+  var cat=$id('cert-cat').value,ym=$id('cert-month').value;if(!ym)return;
+  $id('cert-custom-wrap').style.display=cat==='custom'?'':'none';
+  var r=certRank(cat==='custom'?'resultado':cat,ym);
+  certCands=r.elig;
+  // tabela de candidatos
+  var h='<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.72rem"><tr style="color:var(--tx2);text-align:left"><th style="padding:.35rem">#</th><th>Trader</th><th>Dias</th><th>Ops</th><th style="text-align:right">Dias +</th><th style="text-align:right">Disciplina 2:1</th><th style="text-align:right">Score</th><th style="text-align:right">Acerto</th><th style="text-align:right">Resultado</th></tr>';
+  r.all.slice().sort(function(a,b){return b[r.key]-a[r.key];}).forEach(function(m,i){
+    var ok=r.elig.indexOf(m)>=0;
+    h+='<tr style="border-top:1px solid var(--b1);'+(ok?'':'opacity:.45')+'"><td style="padding:.3rem .35rem">'+(ok?(r.elig.indexOf(m)+1):'—')+'</td><td>'+esc(m.t.name)+'</td><td>'+m.nDays+'</td><td>'+m.nOps+'</td><td style="text-align:right">'+m.pctPos.toFixed(0)+'%</td><td style="text-align:right">'+m.pctDisc.toFixed(0)+'%</td><td style="text-align:right">'+m.score.toFixed(0)+'</td><td style="text-align:right">'+m.wr.toFixed(0)+'%</td><td style="text-align:right">'+fmtR(m.net)+'</td></tr>';
+  });
+  $id('cert-cands').innerHTML=h+'</table>';
+  if(r.elig.length){$id('cert-who').value=r.elig[0].t.id;}
+  certMsgEdited=false;
+  certWhoChanged();
+}
+
+function certCurrentMetrics(){
+  var id=$id('cert-who').value,ym=$id('cert-month').value;if(id==='__custom')return null;
+  var t=loadTraders().filter(function(x){return x.id===id;})[0];if(!t)return null;
+  return certMetrics(t,ym);
+}
+
+function certDefaultMsg(cat,ym){
+  var p=ym.split('-'),mes=MONTHS_PT[parseInt(p[1],10)-1]+' de '+p[0];
+  if(cat==='consistencia')return 'Pela consistência nos resultados e pela disciplina exemplar no cumprimento das regras de risco da mesa em '+mes+'.';
+  if(cat==='resultado')return 'Pelo melhor desempenho entre os operadores da mesa em '+mes+', com método, foco e responsabilidade.';
+  if(cat==='winrate')return 'Pela maior taxa de acerto da mesa em '+mes+', refletindo seletividade e execução precisa.';
+  return 'Em reconhecimento ao empenho e à dedicação demonstrados em '+mes+'.';
+}
+
+function certWhoChanged(){
+  var custom=$id('cert-who').value==='__custom';
+  $id('cert-name-wrap').style.display=custom?'':'none';
+  if(!certMsgEdited){$id('cert-msg').value=certDefaultMsg($id('cert-cat').value,$id('cert-month').value||today().slice(0,7));}
+  drawCertificate();
+}
+
+// ── desenho do certificado ──
+function certWrap(ctx,text,maxW){
+  var words=String(text).split(/\s+/),lines=[],cur='';
+  words.forEach(function(w){var t=cur?cur+' '+w:w;if(ctx.measureText(t).width>maxW&&cur){lines.push(cur);cur=w;}else cur=t;});
+  if(cur)lines.push(cur);return lines;
+}
+function certFit(ctx,text,font,maxW,startPx){
+  var px=startPx;do{ctx.font=font.replace('{px}',px);px-=2;}while(ctx.measureText(text).width>maxW&&px>20);
+}
+function certSpaced(ctx,text,x,y,sp){
+  // texto centralizado com espaçamento entre letras
+  var chars=text.split(''),w=0;chars.forEach(function(c){w+=ctx.measureText(c).width+sp;});w-=sp;
+  var cx=x-w/2;ctx.textAlign='left';chars.forEach(function(c){ctx.fillText(c,cx,y);cx+=ctx.measureText(c).width+sp;});ctx.textAlign='center';
+}
+function drawCertificate(){
+  var cv=$id('cert-canvas');if(!cv)return;
+  var sq=$id('cert-fmt').value==='sq';
+  var W=sq?1080:1600,H=sq?1080:1131;cv.width=W;cv.height=H;
+  var ctx=cv.getContext('2d'),u=Math.min(W/1600,H/1131)*(sq?1.25:1);
+  var GOLD='#d4af5a',GOLD2='#f3dc9b',INK='#f4f1e8',MUTE='#9aa4bd';
+  var cat=$id('cert-cat').value,ym=$id('cert-month').value||today().slice(0,7);
+  var p=ym.split('-'),mesLbl=MONTHS_PT[parseInt(p[1],10)-1]+' de '+p[0];
+  var m=certCurrentMetrics();
+  var name=$id('cert-who').value==='__custom'?($id('cert-name').value||'Nome do Premiado'):(m?m.t.name:'—');
+  var award=cat==='custom'?($id('cert-custom-title').value||'Destaque do Mês'):certCatLabels[cat];
+
+  // fundo
+  var g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#060a15');g.addColorStop(.55,'#0e1730');g.addColorStop(1,'#070b16');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  var rg=ctx.createRadialGradient(W/2,H*.42,10,W/2,H*.42,W*.6);rg.addColorStop(0,'rgba(212,175,90,.13)');rg.addColorStop(1,'rgba(212,175,90,0)');
+  ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);
+  // molduras
+  var b=34*u;ctx.strokeStyle=GOLD;ctx.lineWidth=5*u;ctx.strokeRect(b,b,W-2*b,H-2*b);
+  ctx.lineWidth=1.5*u;ctx.strokeRect(b+16*u,b+16*u,W-2*(b+16*u),H-2*(b+16*u));
+  // cantos
+  [[b,b,1,1],[W-b,b,-1,1],[b,H-b,1,-1],[W-b,H-b,-1,-1]].forEach(function(c){
+    ctx.fillStyle=GOLD;ctx.beginPath();ctx.moveTo(c[0],c[1]);ctx.lineTo(c[0]+c[2]*46*u,c[1]);ctx.lineTo(c[0],c[1]+c[3]*46*u);ctx.closePath();ctx.fill();
+  });
+
+  ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  var y=H*(sq?.115:.135);
+  ctx.fillStyle=MUTE;ctx.font='600 '+Math.round(24*u)+'px Georgia,serif';
+  certSpaced(ctx,($id('cert-org').value||'').toUpperCase(),W/2,y,5*u);
+  y+=H*(sq?.075:.085);
+  ctx.fillStyle=GOLD2;ctx.font='700 '+Math.round(54*u)+'px Georgia,serif';
+  certSpaced(ctx,'CERTIFICADO DE RECONHECIMENTO',W/2,y,(sq?2:6)*u);
+  // divisor
+  y+=H*.035;ctx.strokeStyle=GOLD;ctx.lineWidth=2*u;
+  ctx.beginPath();ctx.moveTo(W/2-150*u,y);ctx.lineTo(W/2-18*u,y);ctx.moveTo(W/2+18*u,y);ctx.lineTo(W/2+150*u,y);ctx.stroke();
+  ctx.fillStyle=GOLD;ctx.save();ctx.translate(W/2,y);ctx.rotate(Math.PI/4);ctx.fillRect(-6*u,-6*u,12*u,12*u);ctx.restore();
+  // concedido a
+  y+=H*.075;ctx.fillStyle=MUTE;ctx.font='italic '+Math.round(28*u)+'px Georgia,serif';ctx.fillText('concedido a',W/2,y);
+  // nome
+  y+=H*(sq?.11:.12);ctx.fillStyle=INK;
+  certFit(ctx,name,'italic 700 {px}px Georgia,serif',W-200*u,Math.round(118*u));
+  ctx.fillText(name,W/2,y);
+  var nw=Math.min(ctx.measureText(name).width+80*u,W-160*u);
+  ctx.strokeStyle=GOLD;ctx.lineWidth=2*u;ctx.beginPath();ctx.moveTo(W/2-nw/2,y+24*u);ctx.lineTo(W/2+nw/2,y+24*u);ctx.stroke();
+  // pílula da categoria
+  y+=H*(sq?.095:.105);
+  ctx.font='700 '+Math.round(40*u)+'px Georgia,serif';
+  var aw=ctx.measureText(award.toUpperCase()).width+120*u,ah=76*u;
+  var pg=ctx.createLinearGradient(W/2-aw/2,0,W/2+aw/2,0);pg.addColorStop(0,'#b88a2e');pg.addColorStop(.5,GOLD2);pg.addColorStop(1,'#b88a2e');
+  ctx.fillStyle=pg;
+  var rx=W/2-aw/2,ry=y-ah*.68,rr=ah/2;
+  ctx.beginPath();ctx.moveTo(rx+rr,ry);ctx.lineTo(rx+aw-rr,ry);ctx.arc(rx+aw-rr,ry+rr,rr,-Math.PI/2,Math.PI/2);ctx.lineTo(rx+rr,ry+ah);ctx.arc(rx+rr,ry+rr,rr,Math.PI/2,Math.PI*1.5);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#16110a';certSpaced(ctx,award.toUpperCase(),W/2,y,2*u);
+  // mensagem
+  y+=H*(sq?.085:.09);ctx.fillStyle=INK;ctx.font=Math.round(32*u)+'px Georgia,serif';
+  var lines=certWrap(ctx,$id('cert-msg').value||'',W-(sq?170:360)*u);
+  lines.slice(0,4).forEach(function(l,i){ctx.fillText(l,W/2,y+i*44*u);});
+  y+=Math.min(lines.length,4)*44*u;
+  // indicadores
+  if($id('cert-stats').checked&&m&&m.nDays>0){
+    var parts=[];
+    parts.push(m.nDays+' dias operados');
+    parts.push(m.pctPos.toFixed(0)+'% de dias positivos');
+    if(cat==='consistencia'||cat==='custom')parts.push(m.pctDisc.toFixed(0)+'% dentro do limite de perda');
+    if(cat==='winrate')parts.push(m.wr.toFixed(0)+'% de acerto em '+m.nOps+' ops');
+    if($id('cert-money').checked)parts.push((m.net>=0?'+':'')+fmtR(m.net));
+    ctx.fillStyle=GOLD;ctx.font='600 '+Math.round(24*u)+'px "Courier New",monospace';
+    var st=parts.join('   •   ');
+    var sl=certWrap(ctx,st,W-200*u);
+    sl.slice(0,2).forEach(function(l,i){ctx.fillText(l,W/2,y+30*u+i*34*u);});
+  }
+  // selo
+  var sy=H*(sq?.785:.855),sr=62*u;
+  var sg=ctx.createRadialGradient(W/2-12*u,sy-14*u,6*u,W/2,sy,sr);sg.addColorStop(0,GOLD2);sg.addColorStop(1,'#a9791f');
+  ctx.fillStyle=sg;ctx.beginPath();ctx.arc(W/2,sy,sr,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#5a3f0c';ctx.lineWidth=3*u;ctx.beginPath();ctx.arc(W/2,sy,sr-9*u,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#3a2806';ctx.beginPath();
+  for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5,rad=i%2?15*u:34*u;ctx.lineTo(W/2+Math.cos(a)*rad,sy+Math.sin(a)*rad);}
+  ctx.closePath();ctx.fill();
+  // assinaturas
+  var ly=H*(sq?.895:.875),lw=sq?250*u:300*u,off=sq?W*.26:W*.24;
+  [[W/2-off,'cert-sig1','cert-sig1r'],[W/2+off,'cert-sig2','cert-sig2r']].forEach(function(s){
+    ctx.strokeStyle=MUTE;ctx.lineWidth=1.5*u;ctx.beginPath();ctx.moveTo(s[0]-lw/2,ly);ctx.lineTo(s[0]+lw/2,ly);ctx.stroke();
+    ctx.fillStyle=INK;ctx.font='italic 700 '+Math.round(28*u)+'px Georgia,serif';ctx.fillText($id(s[1]).value||'',s[0],ly+34*u);
+    ctx.fillStyle=MUTE;ctx.font=Math.round(20*u)+'px Georgia,serif';ctx.fillText($id(s[2]).value||'',s[0],ly+60*u);
+  });
+  ctx.fillStyle=MUTE;ctx.font=Math.round(20*u)+'px "Courier New",monospace';
+  ctx.fillText('Referência: '+mesLbl,W/2,H-b-26*u);
+}
+function downloadCertificate(){
+  drawCertificate();
+  var name=($id('cert-who').value==='__custom'?$id('cert-name').value:(certCurrentMetrics()||{t:{name:'premiado'}}).t.name)||'premiado';
+  $id('cert-canvas').toBlob(function(bl){dl(bl,'certificado_'+$id('cert-cat').value+'_'+$id('cert-month').value+'_'+name.replace(/\s+/g,'_')+'.png');toast('Certificado baixado','g');},'image/png');
 }
 
 // ── PER-TRADER COST CALC ─────────────────────────────────────────────
@@ -5900,16 +6129,16 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news','estudos'],
-  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa'],
+  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa','certificados'],
   viewer:  ['news','estudos'],
   metodo2: ['today','history','pnl','estudos','metodo2']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news','estudos'],
   diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa'],
   viewer:  ['news','estudos'],
@@ -5928,7 +6157,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2','metodo2admin','exportmesa','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2','metodo2admin','exportmesa','certificados','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
