@@ -490,6 +490,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-metodo2"    onclick="nav('metodo2')"><span class="sb-icon">🚀</span>Minha Aprovação</div>
 
   <div class="sb-sec">Sistema</div>
+  <div class="sb-item"    id="n-perfil" onclick="nav('perfil')"><span class="sb-icon">👤</span>Meu Perfil</div>
   <div class="sb-item"    id="n-certificados" onclick="nav('certificados')"><span class="sb-icon">🏅</span>Certificados</div>
   <div class="sb-item"    id="n-exportmesa" onclick="nav('exportmesa')"><span class="sb-icon">📊</span>Exportar Mesa</div>
   <div class="sb-item"    id="n-export"    onclick="nav('export')"><span class="sb-icon">💾</span>Exportar</div>
@@ -1120,6 +1121,15 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
     <button class="ptab"    data-rp="today" onclick="setRP('today')">Hoje</button>
   </div>
   <div id="rank-content"></div>
+</div>
+
+<!-- MEU PERFIL -->
+<div class="pg" id="page-perfil">
+  <div class="pg-head"><div><div class="pg-title">👤 <span id="perfil-title">Meu Perfil</span></div><div class="pg-sub" id="perfil-sub">Seus dados e os parâmetros definidos pela mesa</div></div>
+    <div id="perfil-who-wrap" style="display:none;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Ver: <select id="perfil-who" onchange="perfilLoadTarget(this.value)" style="min-width:230px;background:var(--bg);color:var(--tx);border:1px solid var(--b2);border-radius:var(--r);padding:.45rem .6rem;font-family:var(--mono)"></select></div></div>
+  <div id="perfil-msg" style="display:none;background:var(--stopdim);border:1px solid var(--stop);border-radius:var(--r);padding:.85rem 1.1rem;margin-bottom:1rem;font-family:var(--mono);font-size:.74rem;color:var(--stop);line-height:1.7"></div>
+  <div id="perfil-form"></div>
+  <div id="perfil-team" style="margin-top:1.25rem"></div>
 </div>
 
 <!-- CERTIFICADOS -->
@@ -1935,6 +1945,7 @@ function nav(page){
   else if(page==='export')renderExpPreview();
   else if(page==='exportmesa')renderExportMesaPreview();
   else if(page==='certificados')renderCertificados();
+  else if(page==='perfil')renderPerfil();
   else if(page==='config')renderConfig();
   else if(page==='opcoes')renderOpcoes();
   else if(page==='estudos')renderEstudos();
@@ -3781,6 +3792,155 @@ function downloadCertificate(){
   var name=($id('cert-who').value==='__custom'?$id('cert-name').value:(certCurrentMetrics()||{t:{name:'premiado'}}).t.name)||'premiado';
   $id('cert-canvas').toBlob(function(bl){dl(bl,'certificado_'+$id('cert-cat').value+'_'+$id('cert-month').value+'_'+name.replace(/\s+/g,'_')+'.png');toast('Certificado baixado','g');},'image/png');
 }
+
+// ══════════════════════════════════════════════════════════════════════
+// MEU PERFIL — dados pessoais + parâmetros da mesa (tabela perfis_operador)
+// Permissões por campo: edit:'gestor' (só o gestor altera) | 'operador' (o próprio altera)
+// Para mudar quem edita cada campo, basta trocar o valor de "edit" abaixo.
+// ══════════════════════════════════════════════════════════════════════
+var PERFIL_FIELDS=[
+  // — definidos pela mesa —
+  {k:'plataforma',label:'Plataforma contratada',type:'select',opts:['Profit One','Profit Pro','Profit Ultra','Outra'],edit:'gestor',grp:'mesa'},
+  {k:'corretora',label:'Corretora',type:'text',edit:'gestor',grp:'mesa'},
+  {k:'conta_corretora',label:'Nº da conta na corretora',type:'text',edit:'gestor',grp:'mesa'},
+  {k:'ativo',label:'Ativo que opera',type:'text',edit:'gestor',grp:'mesa',ph:'WIN'},
+  {k:'contratos_max',label:'Contratos máximos',type:'number',edit:'gestor',grp:'mesa',min:1,max:20},
+  {k:'capital_base',label:'Capital base (R$)',type:'number',edit:'gestor',grp:'mesa',step:100},
+  {k:'nivel',label:'Nível',type:'select',opts:['Júnior','Pleno','Sênior'],edit:'gestor',grp:'mesa'},
+  {k:'data_inicio',label:'Início na mesa',type:'date',edit:'gestor',grp:'mesa'},
+  // — preenchidos pelo operador —
+  {k:'telefone',label:'Telefone / WhatsApp',type:'text',edit:'operador',grp:'pessoal'},
+  {k:'email_contato',label:'E-mail de contato',type:'text',edit:'operador',grp:'pessoal'},
+  {k:'data_nascimento',label:'Data de nascimento',type:'date',edit:'operador',grp:'pessoal'},
+  {k:'cidade',label:'Cidade / UF',type:'text',edit:'operador',grp:'pessoal'},
+  {k:'emergencia_nome',label:'Contato de emergência — nome',type:'text',edit:'operador',grp:'pessoal'},
+  {k:'emergencia_tel',label:'Contato de emergência — telefone',type:'text',edit:'operador',grp:'pessoal'}
+];
+var perfilTargetId=null, perfilProfiles=[], perfilRows={}, perfilCurrent=null;
+
+function perfilIsGestor(){return getRole()==='gestor';}
+function perfilIsStaff(){var r=getRole();return r==='gestor'||r==='diretor';}
+
+function renderPerfil(){
+  var msg=$id('perfil-msg');if(msg)msg.style.display='none';
+  if(!supabase||!currentUser){return;}
+  perfilTargetId=currentUser.id;
+  var wrap=$id('perfil-who-wrap');
+  if(!perfilIsStaff()){
+    if(wrap)wrap.style.display='none';
+    perfilLoadTarget(currentUser.id);
+    return;
+  }
+  // gestor/diretor: lista de perfis + todos os cadastros de perfil
+  supabase.from('profiles').select('id,name,role,active').order('name').then(function(res){
+    perfilProfiles=(res.data||[]).filter(function(x){return x.active!==false;});
+    var h='';
+    perfilProfiles.forEach(function(x){h+='<option value="'+x.id+'">'+esc(x.name||'—')+' ('+esc(x.role||'')+')'+(x.id===currentUser.id?' — eu':'')+'</option>';});
+    var sel=$id('perfil-who');if(sel){sel.innerHTML=h;sel.value=currentUser.id;}
+    if(wrap)wrap.style.display='flex';
+    supabase.from('perfis_operador').select('*').then(function(r2){
+      perfilRows={};(r2.data||[]).forEach(function(r){perfilRows[r.user_id]=r;});
+      renderPerfilTeam();
+      perfilLoadTarget(currentUser.id);
+    });
+  });
+}
+
+function perfilLoadTarget(uid){
+  perfilTargetId=uid;
+  var msg=$id('perfil-msg');
+  supabase.from('perfis_operador').select('*').eq('user_id',uid).maybeSingle().then(function(res){
+    if(res.error){
+      if(msg){msg.style.display='';msg.innerHTML='⚠ Não foi possível carregar o perfil: '+esc(res.error.message)+'<br>Se a tabela ainda não existe, rode o SQL de criação (perfis_operador) no Supabase.';}
+      return;
+    }
+    if(msg)msg.style.display='none';
+    perfilCurrent=res.data||{};
+    perfilRows[uid]=res.data||perfilRows[uid];
+    renderPerfilForm();
+  });
+}
+
+function perfilInput(f,v,canEdit){
+  var id='pf-'+f.k,dis=canEdit?'':' disabled';
+  var val=(v===null||v===undefined)?'':v;
+  if(f.type==='select'){
+    var o='<option value="">— selecione —</option>';
+    f.opts.forEach(function(x){o+='<option value="'+esc(x)+'"'+(val===x?' selected':'')+'>'+esc(x)+'</option>';});
+    return '<select id="'+id+'"'+dis+'>'+o+'</select>';
+  }
+  var extra=(f.min!==undefined?' min="'+f.min+'"':'')+(f.max!==undefined?' max="'+f.max+'"':'')+(f.step?' step="'+f.step+'"':'')+(f.ph?' placeholder="'+f.ph+'"':'');
+  return '<input type="'+f.type+'" id="'+id+'" value="'+esc(String(val))+'"'+extra+dis+'>';
+}
+
+function renderPerfilForm(){
+  var host=$id('perfil-form');if(!host)return;
+  var uid=perfilTargetId,self=(uid===currentUser.id),gest=perfilIsGestor();
+  var prof=perfilProfiles.filter(function(x){return x.id===uid;})[0]||{name:(currentProfile&&currentProfile.name)||'',role:getRole()};
+  var rowData=perfilCurrent||{};
+  setText('perfil-title',self?'Meu Perfil':'Perfil — '+(prof.name||''));
+  setText('perfil-sub',self?'Seus dados e os parâmetros definidos pela mesa':'Visualização do perfil do operador'+(gest?' — você pode editar todos os campos':' — somente leitura'));
+  var canEditField=function(f){return gest||(self&&f.edit==='operador');};
+  var anyEditable=PERFIL_FIELDS.some(canEditField);
+
+  var email=self&&currentUser?currentUser.email:'';
+  var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem">';
+  // identificação
+  h+='<div class="sec" style="margin:0"><div class="sec-head"><div class="sec-title">Identificação</div></div><div class="sec-body" style="font-family:var(--mono);font-size:.78rem;line-height:2">';
+  h+='<div><span style="color:var(--tx3)">Nome:</span> <b>'+esc(prof.name||'—')+'</b></div>';
+  h+='<div><span style="color:var(--tx3)">Acesso:</span> '+esc(prof.role||'—')+'</div>';
+  if(email)h+='<div><span style="color:var(--tx3)">Login:</span> '+esc(email)+'</div>';
+  h+='<div style="font-size:.66rem;color:var(--tx3);margin-top:.5rem">Para alterar nome ou nível de acesso, fale com o gestor.</div></div></div>';
+
+  [['mesa','Parâmetros da mesa'+(gest?'':' 🔒 definidos pelo gestor')],['pessoal','Meus dados']].forEach(function(g){
+    h+='<div class="sec" style="margin:0"><div class="sec-head"><div class="sec-title">'+g[1]+'</div></div><div class="sec-body" style="display:flex;flex-direction:column;gap:.7rem">';
+    PERFIL_FIELDS.filter(function(f){return f.grp===g[0];}).forEach(function(f){
+      var ce=canEditField(f);
+      h+='<div class="fg"><label>'+f.label+(ce?'':' <span style="color:var(--tx3)">🔒</span>')+'</label>'+perfilInput(f,rowData[f.k],ce)+'</div>';
+    });
+    h+='</div></div>';
+  });
+  h+='</div>';
+  if(anyEditable)h+='<div style="margin-top:1rem"><button class="btn btn-p" id="perfil-save" onclick="savePerfil()">Salvar perfil</button></div>';
+  if(rowData.updated_at)h+='<div style="font-family:var(--mono);font-size:.64rem;color:var(--tx3);margin-top:.5rem">Última atualização: '+new Date(rowData.updated_at).toLocaleString('pt-BR')+'</div>';
+  host.innerHTML=h;
+}
+
+function savePerfil(){
+  var uid=perfilTargetId,self=(uid===currentUser.id),gest=perfilIsGestor();
+  var row={user_id:uid};
+  PERFIL_FIELDS.forEach(function(f){
+    if(!(gest||(self&&f.edit==='operador')))return;
+    var el=$id('pf-'+f.k);if(!el)return;
+    var v=el.value;
+    if(v===''){row[f.k]=null;return;}
+    if(f.type==='number'){v=parseFloat(v);if(isNaN(v)){row[f.k]=null;return;}if(f.k==='contratos_max')v=Math.max(1,Math.round(v));}
+    row[f.k]=v;
+  });
+  var btn=$id('perfil-save');if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+  supabase.from('perfis_operador').upsert(row,{onConflict:'user_id'}).select().maybeSingle().then(function(res){
+    if(btn){btn.disabled=false;btn.textContent='Salvar perfil';}
+    if(res.error){toast('Erro ao salvar: '+res.error.message,'s');return;}
+    perfilCurrent=res.data||perfilCurrent;perfilRows[uid]=perfilCurrent;
+    toast('Perfil salvo','g');
+    renderPerfilForm();renderPerfilTeam();
+  });
+}
+
+function renderPerfilTeam(){
+  var host=$id('perfil-team');if(!host)return;
+  if(!perfilIsStaff()){host.innerHTML='';return;}
+  var opF=PERFIL_FIELDS.filter(function(f){return f.edit==='operador';});
+  var h='<div class="sec"><div class="sec-head"><div class="sec-title">Equipe — visão geral</div></div><div class="sec-body" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.72rem"><tr style="color:var(--tx2);text-align:left"><th style="padding:.4rem">Nome</th><th>Acesso</th><th>Plataforma</th><th>Ativo</th><th style="text-align:right">Contratos máx.</th><th style="text-align:right">Capital base</th><th>Nível</th><th style="text-align:right">Dados pessoais</th></tr>';
+  perfilProfiles.forEach(function(x){
+    var r=perfilRows[x.id]||{};
+    var filled=opF.filter(function(f){return r[f.k]!==null&&r[f.k]!==undefined&&r[f.k]!=='';}).length;
+    h+='<tr style="border-top:1px solid var(--b1);cursor:pointer" onclick="perfilPick(&quot;'+x.id+'&quot;)"><td style="padding:.4rem">'+esc(x.name||'—')+'</td><td>'+esc(x.role||'')+'</td><td>'+esc(r.plataforma||'—')+'</td><td>'+esc(r.ativo||'—')+'</td><td style="text-align:right">'+(r.contratos_max||'—')+'</td><td style="text-align:right">'+(r.capital_base?fmtR(r.capital_base):'—')+'</td><td>'+esc(r.nivel||'—')+'</td><td style="text-align:right;color:'+(filled===opF.length?'var(--gain)':'var(--warn)')+'">'+filled+'/'+opF.length+'</td></tr>';
+  });
+  h+='</table><div style="font-family:var(--mono);font-size:.64rem;color:var(--tx3);margin-top:.6rem">Clique numa linha para abrir o perfil.</div></div></div>';
+  host.innerHTML=h;
+}
+function perfilPick(uid){var sel=$id('perfil-who');if(sel)sel.value=uid;perfilLoadTarget(uid);window.scrollTo(0,0);}
 
 // ── PER-TRADER COST CALC ─────────────────────────────────────────────
 function getCustosForTrader(trader){
@@ -6129,20 +6289,20 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','export','config'],
-  trader:  ['today','history','analytics','stats','diario','pnl','news','estudos'],
-  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa','certificados'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','perfil','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl','news','estudos','perfil'],
+  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa','certificados','perfil'],
   viewer:  ['news','estudos'],
-  metodo2: ['today','history','pnl','estudos','metodo2']
+  metodo2: ['today','history','pnl','estudos','metodo2','perfil']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','export','config'],
-  trader:  ['today','history','analytics','stats','diario','pnl','news','estudos'],
-  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','perfil','export','config'],
+  trader:  ['today','history','analytics','stats','diario','pnl','news','estudos','perfil'],
+  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa','certificados','perfil'],
   viewer:  ['news','estudos'],
-  metodo2: ['today','history','pnl','estudos','metodo2']
+  metodo2: ['today','history','pnl','estudos','metodo2','perfil']
 };
 
 function getRole(){
@@ -6157,7 +6317,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2','metodo2admin','exportmesa','certificados','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2','metodo2admin','exportmesa','certificados','perfil','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
