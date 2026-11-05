@@ -482,8 +482,6 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <div class="sb-item"    id="n-estudos"   onclick="nav('estudos')"><span class="sb-icon">📚</span>Estudos</div>
 
   <div class="sb-sec">Restrito</div>
-  <div class="sb-item"    id="n-opcoes"    onclick="nav('opcoes')"><span class="sb-icon">📑</span>Opções</div>
-  <div class="sb-item"    id="n-cadastros" onclick="nav('cadastros')"><span class="sb-icon">🪪</span>Cadastros</div>
   <div class="sb-item"    id="n-metodo2admin" onclick="nav('metodo2admin')"><span class="sb-icon">🧭</span>Método 2</div>
 
   <div class="sb-sec" id="sb-sec-metodo2">Método 2</div>
@@ -1752,9 +1750,7 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
   <button class="mnbtn"    id="mn-diario"    onclick="nav('diario');mnavSel(this)"><span class="mi">📓</span>Diário</button>
   <button class="mnbtn"    id="mn-pnl"       onclick="nav('pnl');mnavSel(this)"><span class="mi">📅</span>PNL</button>
   <button class="mnbtn"    id="mn-news"      onclick="nav('news');mnavSel(this)"><span class="mi">📰</span>News</button>
-  <button class="mnbtn"    id="mn-opcoes"    onclick="nav('opcoes');mnavSel(this)"><span class="mi">📑</span>Opções</button>
   <button class="mnbtn"    id="mn-estudos" onclick="nav('estudos');mnavSel(this)"><span class="mi">📚</span>Estudos</button>
-  <button class="mnbtn"    id="mn-cadastros" onclick="nav('cadastros');mnavSel(this)"><span class="mi">🪪</span>Cadastros</button>
   <button class="mnbtn"    id="mn-metodo2admin" onclick="nav('metodo2admin');mnavSel(this)"><span class="mi">🧭</span>Método 2</button>
   <button class="mnbtn"    id="mn-metodo2" onclick="nav('metodo2');mnavSel(this)"><span class="mi">🚀</span>Aprovação</button>
   <button class="mnbtn"    id="mn-config"    onclick="nav('config');mnavSel(this)"><span class="mi">⚙️</span>Cfg</button>
@@ -2482,8 +2478,22 @@ function saveAddTrader(){
 function deleteTrader(tid){
   var traders=loadTraders(),t=traders.filter(function(x){return x.id===tid;})[0];
   if(!t||!confirm('Remover "'+t.name+'" e todos os dados importados?'))return;
-  saveTraders(traders.filter(function(x){return x.id!==tid;}));delTData(tid);
-  renderMesa();renderRanking();toast('Trader removido');
+  function localRemove(){
+    // remove nas duas contas (demo/real) — o id é único
+    ['demo','real'].forEach(function(ac){
+      try{
+        var k='dt_traders_'+ac,arr=JSON.parse(localStorage.getItem(k)||'[]');
+        localStorage.setItem(k,JSON.stringify(arr.filter(function(x){return x.id!==tid;})));
+        localStorage.removeItem('dt_tops_'+ac+'_'+tid);
+      }catch(e){}
+    });
+    renderMesa();renderRanking();toast('Trader removido');
+  }
+  if(!supabase||!currentUser){localRemove();return;}
+  sbDeleteTrader(tid,function(err){
+    if(err){toast('Não foi possível remover no banco: '+err.message,'s');return;}
+    localRemove();
+  });
 }
 // MESA PERIOD
 var mesaPeriod='today',rankPeriod='all';
@@ -5751,12 +5761,16 @@ function sbPushTraders(traders, acct){
   });
 }
 
-function sbDeleteTrader(tid){
-  if(!supabase||!currentUser)return;
-  supabase.from('traders').delete().eq('id',tid).then(function(res){
-    if(res.error)console.warn('sbDeleteTrader error:',res.error.message);
+function sbDeleteTrader(tid,cb){
+  if(!supabase||!currentUser){if(cb)cb(null);return;}
+  supabase.from('trader_ops').delete().eq('trader_id',tid).then(function(r1){
+    supabase.from('traders').delete().eq('id',tid).select().then(function(res){
+      var err=res.error||null;
+      if(!err&&(!res.data||!res.data.length)){err={message:'o banco não removeu a linha (sem permissão ou já inexistente) — atualize a página e confira'};}
+      if(err)console.warn('sbDeleteTrader error:',err.message);
+      if(cb)cb(err);
+    });
   });
-  supabase.from('trader_ops').delete().eq('trader_id',tid).then(function(){});
 }
 
 function sbPushTOps(tid, ops, acct){
@@ -6289,18 +6303,18 @@ function renderPnl(){
 
 // Pages visible per role
 var ROLE_PAGES = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','perfil','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','metodo2admin','exportmesa','certificados','perfil','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news','estudos','perfil'],
-  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa','certificados','perfil'],
+  diretor: ['mesa','metas','diario','pnl','news','estudos','exportmesa','certificados','perfil'],
   viewer:  ['news','estudos'],
   metodo2: ['today','history','pnl','estudos','metodo2','perfil']
 };
 
 // Nav items to show per role
 var ROLE_NAV = {
-  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2admin','exportmesa','certificados','perfil','export','config'],
+  gestor:  ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','metodo2admin','exportmesa','certificados','perfil','export','config'],
   trader:  ['today','history','analytics','stats','diario','pnl','news','estudos','perfil'],
-  diretor: ['mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','exportmesa','certificados','perfil'],
+  diretor: ['mesa','metas','diario','pnl','news','estudos','exportmesa','certificados','perfil'],
   viewer:  ['news','estudos'],
   metodo2: ['today','history','pnl','estudos','metodo2','perfil']
 };
@@ -6317,7 +6331,7 @@ function canAccess(page){
 function applyRoleUI(){
   var role = getRole();
   var allowedNav = ROLE_NAV[role] || ROLE_NAV.trader;
-  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','opcoes','cadastros','metodo2','metodo2admin','exportmesa','certificados','perfil','export','config'];
+  var allNavIds = ['today','history','analytics','stats','mesa','metas','diario','pnl','news','estudos','metodo2','metodo2admin','exportmesa','certificados','perfil','export','config'];
 
   // Show/hide sidebar items
   allNavIds.forEach(function(id){
