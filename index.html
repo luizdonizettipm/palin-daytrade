@@ -5229,7 +5229,7 @@ function onAuthSuccess(){
     console.log('onAuthSuccess: user', currentUser.id, 'profile', currentProfile);
     // Load user data from Supabase into localStorage, then boot
     loadAllUserData(function(){
-      if(getRole()!=='metodo2') seedDemo();
+      // seedDemo() desativado: dados fictícios de demonstração não devem ser criados para nenhum usuário
       loadCFG();onTipo();
       initDrop();initRetroDrop();initProfitDrop();initTrydDrop();
       // Load profiles for gestor view
