@@ -3968,23 +3968,54 @@ function perfilPick(uid){var sel=$id('perfil-who');if(sel)sel.value=uid;perfilLo
 // Tabela estudos_progresso (estudo_id, user_id, status: feito|aprovado|devolvido)
 // Material só entra no checklist quando estudos.checklist = true (gestor liga no card)
 // ══════════════════════════════════════════════════════════════════════
-var estProg={}, estTeam=[];
+var estProg={}, estTeam=[], estOpens={};
 function estIsStaff(){var r=getRole();return r==='gestor'||r==='diretor';}
 
 function estLoadProgress(cb){
-  estProg={};
+  estProg={};estOpens={};
   if(!supabase||!currentUser){if(cb)cb();return;}
+  function loadOpens(done){
+    var q2=supabase.from('estudos_aberturas').select('estudo_id,user_id,aberto_em').order('aberto_em',{ascending:true});
+    if(!estIsStaff())q2=q2.eq('user_id',currentUser.id);
+    q2.then(function(r){
+      if(r.error){console.warn('estudos_aberturas:',r.error.message);}
+      (r.data||[]).forEach(function(x){
+        var o=((estOpens[x.estudo_id]=estOpens[x.estudo_id]||{})[x.user_id]=estOpens[x.estudo_id][x.user_id]||{n:0,first:x.aberto_em,last:x.aberto_em});
+        o.n++;o.last=x.aberto_em;
+      });
+      done();
+    });
+  }
   var q=supabase.from('estudos_progresso').select('*');
   if(!estIsStaff())q=q.eq('user_id',currentUser.id);
   q.then(function(res){
-    if(res.error){console.warn('estudos_progresso:',res.error.message);if(cb)cb();return;}
-    (res.data||[]).forEach(function(r){(estProg[r.estudo_id]=estProg[r.estudo_id]||{})[r.user_id]=r;});
+    if(res.error){console.warn('estudos_progresso:',res.error.message);}
+    else (res.data||[]).forEach(function(r){(estProg[r.estudo_id]=estProg[r.estudo_id]||{})[r.user_id]=r;});
+    function fin(){loadOpens(function(){if(cb)cb();});}
     if(estIsStaff()){
       supabase.from('profiles').select('id,name,role,active').then(function(r2){
         estTeam=(r2.data||[]).filter(function(x){return x.active!==false&&(x.role==='trader'||x.role==='metodo2');});
-        if(cb)cb();
+        fin();
       });
-    } else if(cb)cb();
+    } else fin();
+  });
+}
+function estOpenInfo(id,uid){return estOpens[id]&&estOpens[id][uid]||null;}
+function estOpenLine(id,uid,st){
+  var o=estOpenInfo(id,uid);
+  if(!o){
+    if(st==='feito'||st==='aprovado')return '<span style="color:var(--warn)">⚠ marcou como feito sem abrir o material</span>';
+    return '<span style="color:var(--tx3)">👁 ainda não abriu</span>';
+  }
+  return '<span style="color:var(--tx3)">👁 abriu '+o.n+'× · 1ª em '+estFmtDT(o.first)+(o.n>1?' · última em '+estFmtDT(o.last):'')+'</span>';
+}
+function estLogOpen(id,acao){
+  if(!supabase||!currentUser)return;
+  var now=new Date().toISOString();
+  var o=((estOpens[id]=estOpens[id]||{})[currentUser.id]=estOpens[id][currentUser.id]||{n:0,first:now,last:now});
+  o.n++;o.last=now;
+  supabase.from('estudos_aberturas').insert({estudo_id:id,user_id:currentUser.id,acao:acao}).then(function(res){
+    if(res.error)console.warn('estLogOpen:',res.error.message);
   });
 }
 function estMyRow(id){return estProg[id]&&estProg[id][currentUser.id]||null;}
@@ -4003,7 +4034,7 @@ function estChecklistBlock(e){
   if(estIsStaff()){
     var rows=estProg[e.id]||{},done=0,appr=0;
     estTeam.forEach(function(m){var r=rows[m.id];if(r&&r.status!=='devolvido')done++;if(r&&r.status==='aprovado')appr++;});
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap"><span>Equipe: <b>'+done+'/'+estTeam.length+'</b> concluíram · <b style="color:var(--gain)">'+appr+'</b> aprovados</span><button class="btn btn-t btn-sm" onclick="estOpenTeam(&quot;'+e.id+'&quot;)">'+(getRole()==='gestor'?'📋 Acompanhar / aprovar':'📋 Ver equipe')+'</button></div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap"><span>Equipe: <b>'+done+'/'+estTeam.length+'</b> concluíram · <b style="color:var(--gain)">'+appr+'</b> aprovados · 👁 '+estTeam.filter(function(m){return estOpenInfo(e.id,m.id);}).length+' abriram</span><button class="btn btn-t btn-sm" onclick="estOpenTeam(&quot;'+e.id+'&quot;)">'+(getRole()==='gestor'?'📋 Acompanhar / aprovar':'📋 Ver equipe')+'</button></div>';
   } else {
     var r=estMyRow(e.id),st=r?r.status:'pendente';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">'+estChip(st);
@@ -4014,6 +4045,7 @@ function estChecklistBlock(e){
     if(st==='aprovado')h+='<div style="margin-top:.4rem;color:var(--tx3)">Aprovado em '+estFmtDT(r.aprovado_em)+'</div>';
     if(st==='feito')h+='<div style="margin-top:.4rem;color:var(--tx3)">Marcado em '+estFmtDT(r.feito_em)+'</div>';
   }
+  if(!estIsStaff()){var oi=estOpenInfo(e.id,currentUser.id);h+='<div style="margin-top:.4rem;color:var(--tx3)">'+(oi?'👁 Você abriu em '+estFmtDT(oi.last):'👁 Você ainda não abriu este material')+'</div>';}
   return h+'</div>';
 }
 
@@ -4035,7 +4067,7 @@ function estRenderSummary(){
   items.sort(function(a,b){return String(a.r.feito_em).localeCompare(String(b.r.feito_em));});
   var h='<div class="sec" style="margin-bottom:1rem"><div class="sec-head"><div class="sec-title">⏳ Aguardando sua aprovação ('+items.length+')</div></div><div class="sec-body" style="font-family:var(--mono);font-size:.72rem">';
   items.forEach(function(it){
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.4rem 0;border-top:1px solid var(--b1)"><span><b>'+esc(estName(it.r.user_id))+'</b> — '+esc(it.e.titulo)+' <span style="color:var(--tx3)">('+estFmtDT(it.r.feito_em)+')</span></span><span style="display:flex;gap:.4rem"><button class="btn btn-p btn-sm" onclick="estReview(&quot;'+it.e.id+'&quot;,&quot;'+it.r.user_id+'&quot;,&quot;aprovado&quot;)">Aprovar</button><button class="btn btn-del btn-sm" onclick="estReview(&quot;'+it.e.id+'&quot;,&quot;'+it.r.user_id+'&quot;,&quot;devolvido&quot;)">Devolver</button></span></div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.4rem 0;border-top:1px solid var(--b1)"><span><b>'+esc(estName(it.r.user_id))+'</b> — '+esc(it.e.titulo)+' <span style="color:var(--tx3)">('+estFmtDT(it.r.feito_em)+')</span><br>'+estOpenLine(it.e.id,it.r.user_id,'feito')+'</span><span style="display:flex;gap:.4rem"><button class="btn btn-p btn-sm" onclick="estReview(&quot;'+it.e.id+'&quot;,&quot;'+it.r.user_id+'&quot;,&quot;aprovado&quot;)">Aprovar</button><button class="btn btn-del btn-sm" onclick="estReview(&quot;'+it.e.id+'&quot;,&quot;'+it.r.user_id+'&quot;,&quot;devolvido&quot;)">Devolver</button></span></div>';
   });
   pend.innerHTML=h+'</div></div>';
 }
@@ -4081,6 +4113,7 @@ function estOpenTeam(id){
       if(st==='feito'||st==='aprovado')h+='<button class="btn btn-del btn-sm" onclick="estReview(&quot;'+id+'&quot;,&quot;'+m.id+'&quot;,&quot;devolvido&quot;)">Devolver</button>';
     }
     h+='</span></div>';
+    h+='<div style="margin-top:.3rem">'+estOpenLine(id,m.id,st)+'</div>';
     if(r&&r.nota)h+='<div style="color:var(--stop);margin-top:.3rem">Devolução: '+esc(r.nota)+'</div>';
     if(r&&r.status==='aprovado'&&r.aprovado_em)h+='<div style="color:var(--tx3);margin-top:.3rem">Aprovado em '+estFmtDT(r.aprovado_em)+'</div>';
     h+='</div>';
@@ -7893,6 +7926,7 @@ function openEstudo(id,download){
   var e=null;
   for(var i=0;i<estudosCache.length;i++){if(estudosCache[i].id===id){e=estudosCache[i];break;}}
   if(!e)return;
+  estLogOpen(e.id,download?'baixar':'abrir');
   if(e.tipo==='link'){window.open(e.url,'_blank','noopener');return;}
   var w=download?null:window.open('','_blank'); // abre antes do await p/ não ser bloqueado
   supabase.storage.from('estudos').createSignedUrl(e.storage_path,3600,download?{download:e.file_name||true}:undefined).then(function(res){
