@@ -845,8 +845,11 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
       <button class="ptab"    data-et="doc"   onclick="setEstFilter('doc')">Docs</button>
       <button class="ptab"    data-et="link"  onclick="setEstFilter('link')">Links</button>
       <button class="ptab"    data-et="outro" onclick="setEstFilter('outro')">Outros</button>
+      <button class="ptab"    data-et="check" onclick="setEstFilter('check')">✅ Checklist</button>
     </div>
   </div>
+  <div id="est-summary"></div>
+  <div id="est-pending"></div>
   <div class="trader-grid" id="est-grid"></div>
   <div id="est-empty" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--tx3)">Nenhum material encontrado</div>
 </div>
@@ -1496,6 +1499,14 @@ td{font-family:var(--mono);font-size:.78rem;padding:.65rem 1rem;vertical-align:m
 </div>
 
 <!-- ESTUDOS MODAL -->
+<div class="mbk" id="estchk-modal">
+  <div class="mdl" style="max-width:640px;max-height:88vh;overflow-y:auto">
+    <div class="mdl-title" id="estchk-title">Checklist</div>
+    <div id="estchk-body"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn btn-g" onclick="$id('estchk-modal').classList.remove('show')">Fechar</button></div>
+  </div>
+</div>
+
 <div class="mbk" id="est-modal">
   <div class="mdl">
     <div class="mdl-title" id="est-modal-title">Adicionar Material</div>
@@ -3951,6 +3962,133 @@ function renderPerfilTeam(){
   host.innerHTML=h;
 }
 function perfilPick(uid){var sel=$id('perfil-who');if(sel)sel.value=uid;perfilLoadTarget(uid);window.scrollTo(0,0);}
+
+// ══════════════════════════════════════════════════════════════════════
+// ESTUDOS — CHECKLIST (trader marca "feito" → gestor aprova ou devolve)
+// Tabela estudos_progresso (estudo_id, user_id, status: feito|aprovado|devolvido)
+// Material só entra no checklist quando estudos.checklist = true (gestor liga no card)
+// ══════════════════════════════════════════════════════════════════════
+var estProg={}, estTeam=[];
+function estIsStaff(){var r=getRole();return r==='gestor'||r==='diretor';}
+
+function estLoadProgress(cb){
+  estProg={};
+  if(!supabase||!currentUser){if(cb)cb();return;}
+  var q=supabase.from('estudos_progresso').select('*');
+  if(!estIsStaff())q=q.eq('user_id',currentUser.id);
+  q.then(function(res){
+    if(res.error){console.warn('estudos_progresso:',res.error.message);if(cb)cb();return;}
+    (res.data||[]).forEach(function(r){(estProg[r.estudo_id]=estProg[r.estudo_id]||{})[r.user_id]=r;});
+    if(estIsStaff()){
+      supabase.from('profiles').select('id,name,role,active').then(function(r2){
+        estTeam=(r2.data||[]).filter(function(x){return x.active!==false&&(x.role==='trader'||x.role==='metodo2');});
+        if(cb)cb();
+      });
+    } else if(cb)cb();
+  });
+}
+function estMyRow(id){return estProg[id]&&estProg[id][currentUser.id]||null;}
+function estName(uid){var m=estTeam.filter(function(x){return x.id===uid;})[0];return m?m.name:'—';}
+function estTitle(id){var e=estudosCache.filter(function(x){return x.id===id;})[0];return e?e.titulo:'—';}
+function estFmtDT(v){return v?new Date(v).toLocaleDateString('pt-BR')+' '+new Date(v).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';}
+
+function estChip(st){
+  var m={pendente:['Pendente','var(--tx3)'],feito:['Aguardando aprovação','var(--warn)'],aprovado:['✅ Aprovado','var(--gain)'],devolvido:['↩ Devolvido','var(--stop)']}[st]||['—','var(--tx3)'];
+  return '<span style="font-family:var(--mono);font-size:.62rem;font-weight:700;color:'+m[1]+';border:1px solid '+m[1]+';border-radius:99px;padding:.12rem .5rem;white-space:nowrap">'+m[0]+'</span>';
+}
+
+function estChecklistBlock(e){
+  if(!e.checklist)return '';
+  var h='<div style="margin-top:.55rem;padding:.6rem .7rem;background:var(--bg);border:1px dashed var(--b2);border-radius:var(--r);font-family:var(--mono);font-size:.68rem">';
+  if(estIsStaff()){
+    var rows=estProg[e.id]||{},done=0,appr=0;
+    estTeam.forEach(function(m){var r=rows[m.id];if(r&&r.status!=='devolvido')done++;if(r&&r.status==='aprovado')appr++;});
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap"><span>Equipe: <b>'+done+'/'+estTeam.length+'</b> concluíram · <b style="color:var(--gain)">'+appr+'</b> aprovados</span><button class="btn btn-t btn-sm" onclick="estOpenTeam(&quot;'+e.id+'&quot;)">'+(getRole()==='gestor'?'📋 Acompanhar / aprovar':'📋 Ver equipe')+'</button></div>';
+  } else {
+    var r=estMyRow(e.id),st=r?r.status:'pendente';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">'+estChip(st);
+    if(st==='pendente'||st==='devolvido')h+='<button class="btn btn-p btn-sm" onclick="estMarkDone(&quot;'+e.id+'&quot;)">☑ Marcar como feito</button>';
+    else if(st==='feito')h+='<button class="btn btn-g btn-sm" onclick="estUnmark(&quot;'+e.id+'&quot;)">↶ Desmarcar</button>';
+    h+='</div>';
+    if(st==='devolvido'&&r.nota)h+='<div style="margin-top:.4rem;color:var(--stop)">Gestor: '+esc(r.nota)+'</div>';
+    if(st==='aprovado')h+='<div style="margin-top:.4rem;color:var(--tx3)">Aprovado em '+estFmtDT(r.aprovado_em)+'</div>';
+    if(st==='feito')h+='<div style="margin-top:.4rem;color:var(--tx3)">Marcado em '+estFmtDT(r.feito_em)+'</div>';
+  }
+  return h+'</div>';
+}
+
+function estRenderSummary(){
+  var box=$id('est-summary'),pend=$id('est-pending');if(!box||!pend)return;
+  var list=estudosCache.filter(function(e){return e.checklist;});
+  if(!list.length){box.innerHTML='';pend.innerHTML='';return;}
+  if(!estIsStaff()){
+    var done=0,appr=0;list.forEach(function(e){var r=estMyRow(e.id);if(r&&r.status!=='devolvido')done++;if(r&&r.status==='aprovado')appr++;});
+    var pct=Math.round(appr/list.length*100);
+    box.innerHTML='<div style="font-family:var(--mono);font-size:.74rem;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:.8rem 1rem;margin-bottom:1rem"><div style="display:flex;justify-content:space-between;margin-bottom:.4rem"><span>✅ Meu checklist: <b>'+appr+'</b> aprovados · <b>'+done+'</b> marcados · <b>'+list.length+'</b> no total</span><span style="color:var(--tx3)">'+pct+'%</span></div><div class="meta-bar-bg" style="height:8px"><div class="meta-bar-fill g" style="width:'+Math.max(2,pct)+'%"></div></div></div>';
+    pend.innerHTML='';return;
+  }
+  box.innerHTML='';
+  if(getRole()!=='gestor'){pend.innerHTML='';return;}
+  var items=[];
+  list.forEach(function(e){var rows=estProg[e.id]||{};Object.keys(rows).forEach(function(uid){if(rows[uid].status==='feito')items.push({e:e,r:rows[uid]});});});
+  if(!items.length){pend.innerHTML='<div style="font-family:var(--mono);font-size:.72rem;color:var(--tx3);margin-bottom:1rem">Nenhuma conclusão aguardando sua aprovação.</div>';return;}
+  items.sort(function(a,b){return String(a.r.feito_em).localeCompare(String(b.r.feito_em));});
+  var h='<div class="sec" style="margin-bottom:1rem"><div class="sec-head"><div class="sec-title">⏳ Aguardando sua aprovação ('+items.length+')</div></div><div class="sec-body" style="font-family:var(--mono);font-size:.72rem">';
+  items.forEach(function(it){
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.4rem 0;border-top:1px solid var(--b1)"><span><b>'+esc(estName(it.r.user_id))+'</b> — '+esc(it.e.titulo)+' <span style="color:var(--tx3)">('+estFmtDT(it.r.feito_em)+')</span></span><span style="display:flex;gap:.4rem"><button class="btn btn-p btn-sm" onclick="estReview(&quot;'+it.e.id+'&quot;,&quot;'+it.r.user_id+'&quot;,&quot;aprovado&quot;)">Aprovar</button><button class="btn btn-del btn-sm" onclick="estReview(&quot;'+it.e.id+'&quot;,&quot;'+it.r.user_id+'&quot;,&quot;devolvido&quot;)">Devolver</button></span></div>';
+  });
+  pend.innerHTML=h+'</div></div>';
+}
+
+function estMarkDone(id){
+  supabase.from('estudos_progresso').upsert({estudo_id:id,user_id:currentUser.id,status:'feito'},{onConflict:'estudo_id,user_id'}).then(function(res){
+    if(res.error){toast('Erro: '+res.error.message,'s');return;}
+    toast('Marcado como feito — aguardando aprovação','g');estLoadProgress(renderEstudosGrid);
+  });
+}
+function estUnmark(id){
+  supabase.from('estudos_progresso').delete().eq('estudo_id',id).eq('user_id',currentUser.id).then(function(res){
+    if(res.error){toast('Erro: '+res.error.message,'s');return;}
+    estLoadProgress(renderEstudosGrid);
+  });
+}
+function estReview(id,uid,status){
+  var nota=null;
+  if(status==='devolvido'){nota=prompt('Motivo da devolução (o operador verá esta mensagem):','');if(nota===null)return;}
+  supabase.from('estudos_progresso').update({status:status,nota:nota}).eq('estudo_id',id).eq('user_id',uid).then(function(res){
+    if(res.error){toast('Erro: '+res.error.message,'s');return;}
+    toast(status==='aprovado'?'Aprovado':'Devolvido ao operador','g');
+    estLoadProgress(function(){renderEstudosGrid();if($id('estchk-modal').classList.contains('show'))estOpenTeam(id);});
+  });
+}
+function estToggleChecklist(id){
+  var e=estudosCache.filter(function(x){return x.id===id;})[0];if(!e)return;
+  supabase.from('estudos').update({checklist:!e.checklist}).eq('id',id).select().then(function(res){
+    if(res.error||!res.data||!res.data.length){toast('Não foi possível alterar: '+(res.error?res.error.message:'sem permissão'),'s');return;}
+    renderEstudos();
+  });
+}
+function estOpenTeam(id){
+  var e=estudosCache.filter(function(x){return x.id===id;})[0];if(!e)return;
+  setText('estchk-title','Checklist — '+e.titulo);
+  var rows=estProg[id]||{},canAct=getRole()==='gestor';
+  var h='<div style="font-family:var(--mono);font-size:.72rem">';
+  estTeam.forEach(function(m){
+    var r=rows[m.id],st=r?r.status:'pendente';
+    h+='<div style="padding:.55rem 0;border-top:1px solid var(--b1)"><div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap"><span><b>'+esc(m.name)+'</b>'+(r&&r.feito_em?' <span style="color:var(--tx3)">· feito em '+estFmtDT(r.feito_em)+'</span>':'')+'</span><span style="display:flex;gap:.4rem;align-items:center">'+estChip(st);
+    if(canAct&&r){
+      if(st==='feito'||st==='devolvido')h+='<button class="btn btn-p btn-sm" onclick="estReview(&quot;'+id+'&quot;,&quot;'+m.id+'&quot;,&quot;aprovado&quot;)">Aprovar</button>';
+      if(st==='feito'||st==='aprovado')h+='<button class="btn btn-del btn-sm" onclick="estReview(&quot;'+id+'&quot;,&quot;'+m.id+'&quot;,&quot;devolvido&quot;)">Devolver</button>';
+    }
+    h+='</span></div>';
+    if(r&&r.nota)h+='<div style="color:var(--stop);margin-top:.3rem">Devolução: '+esc(r.nota)+'</div>';
+    if(r&&r.status==='aprovado'&&r.aprovado_em)h+='<div style="color:var(--tx3);margin-top:.3rem">Aprovado em '+estFmtDT(r.aprovado_em)+'</div>';
+    h+='</div>';
+  });
+  if(!estTeam.length)h+='<div style="color:var(--tx3)">Nenhum operador ativo encontrado.</div>';
+  $id('estchk-body').innerHTML=h+'</div>';
+  $id('estchk-modal').classList.add('show');
+}
 
 // ── PER-TRADER COST CALC ─────────────────────────────────────────────
 function getCustosForTrader(trader){
@@ -7709,14 +7847,15 @@ function loadEstudos(callback){
     if(callback)callback();
   });
 }
-function renderEstudos(){ loadEstudos(renderEstudosGrid); }
+function renderEstudos(){ loadEstudos(function(){ estLoadProgress(function(){ renderEstudosGrid(); }); }); }
 
 function renderEstudosGrid(){
   var grid=$id('est-grid'),empty=$id('est-empty');
   if(!grid)return;
   var q=(($id('est-search')||{}).value||'').trim().toLowerCase();
   var list=estudosCache.filter(function(e){
-    if(estFilter==='outro'){ if(e.tipo!=='outro'&&e.tipo!=='imagem')return false; }
+    if(estFilter==='check'){ if(!e.checklist)return false; }
+    else if(estFilter==='outro'){ if(e.tipo!=='outro'&&e.tipo!=='imagem')return false; }
     else if(estFilter!=='all'&&e.tipo!==estFilter)return false;
     if(!q)return true;
     return ((e.titulo||'')+' '+(e.descricao||'')+' '+(e.categoria||'')).toLowerCase().indexOf(q)>=0;
@@ -7734,8 +7873,10 @@ function renderEstudosGrid(){
     html+='<div class="cad-row"><span class="cad-lbl">Enviado por</span><span>'+esc(e.uploaded_by_name||'--')+'</span></div>';
     html+='<div class="cad-row"><span class="cad-lbl">Data</span><span>'+dt+'</span></div>';
     if(e.tipo!=='link')html+='<div class="cad-row"><span class="cad-lbl">Tamanho</span><span>'+estFmtSize(e.file_size)+'</span></div>';
+    html+=estChecklistBlock(e);
     html+='</div>';
     html+='<div style="display:flex;gap:.5rem;justify-content:flex-end;padding:.5rem .85rem;border-top:1px solid var(--b1);flex-wrap:wrap">';
+    if(getRole()==='gestor')html+='<button class="btn btn-g btn-sm" title="Exigir checklist deste material" onclick="estToggleChecklist(&quot;'+e.id+'&quot;)">'+(e.checklist?'☑ Checklist ligado':'☐ Exigir checklist')+'</button>';
     html+='<button class="btn btn-t btn-sm" onclick="openEstudo(&quot;'+e.id+'&quot;,false)">'+(e.tipo==='link'?'🔗 Abrir link':'👁 Abrir')+'</button>';
     if(e.tipo!=='link')html+='<button class="btn btn-g btn-sm" onclick="openEstudo(&quot;'+e.id+'&quot;,true)">⬇ Baixar</button>';
     if(estCanManage(e)){
@@ -7745,6 +7886,7 @@ function renderEstudosGrid(){
     html+='</div></div>';
   });
   grid.innerHTML=html;
+  estRenderSummary();
 }
 
 function openEstudo(id,download){
